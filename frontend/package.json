@@ -2,10 +2,6 @@
   "name": "sistema-nit-frontend",
   "version": "1.0.0",
   "scripts": {
-    "build": "tailwindcss -i src/style.css -o public/css/style.css --minify",
-    "watch": "tailwindcss -i src/style.css -o public/css/style.css --watch"
-  },
-  "devDependencies": {
-    "tailwindcss": "^4.1.0"
+    "build": "echo 'No build step required'"
   }
 }
