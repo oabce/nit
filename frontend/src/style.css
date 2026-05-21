@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --color-nit-blue: #1b2a4a;
+  --color-nit-red:  #cc2229;
+}
