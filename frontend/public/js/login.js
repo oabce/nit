@@ -8,10 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const formSub = document.getElementById('form-sub');
   const btnLoginSubmit = document.getElementById('btn-login-submit');
   const btnRegisterSubmit = document.getElementById('btn-register-submit');
+  const btnRecoverSubmit = document.getElementById('btn-recover-submit');
   const btnShowRegister = document.getElementById('btn-show-register');
+  const btnShowLogin = document.getElementById('btn-show-login');
+  const btnShowLoginFromRecover = document.getElementById('btn-show-login-from-recover');
+  const linkEsqueci = document.getElementById('link-esqueci');
   const regOab = document.getElementById('reg-oab');
   const regUsuario = document.getElementById('reg-usuario');
   const loginIdentifier = document.getElementById('login-identifier');
+  const recoverEmail = document.getElementById('recover-email');
   const mobileQuery = window.matchMedia('(max-width: 767px)');
 
   let activeProfile = null;
@@ -96,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formTitle.textContent = cfg.title;
     formSub.textContent = cfg.sub;
 
-    [btnLoginSubmit, btnRegisterSubmit].forEach((btn) => {
+    [btnLoginSubmit, btnRegisterSubmit, btnRecoverSubmit].forEach((btn) => {
       btn.style.background = cfg.color;
       btn.onmouseenter = () => {
         btn.style.background = cfg.colorDark;
@@ -217,10 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function showView(view) {
     document.getElementById('form-login').classList.toggle('hidden', view !== 'login');
     document.getElementById('form-register').classList.toggle('hidden', view !== 'register');
+    document.getElementById('form-recover').classList.toggle('hidden', view !== 'recover');
   }
 
   function clearMsgs() {
-    ['msg-login', 'msg-register'].forEach((id) => {
+    ['msg-login', 'msg-register', 'msg-recover'].forEach((id) => {
       const el = document.getElementById(id);
       el.textContent = '';
       el.className = 'msg';
@@ -259,7 +265,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-back').addEventListener('click', closeProfile);
   document.getElementById('btn-show-register').addEventListener('click', () => showView('register'));
-  document.getElementById('btn-show-login').addEventListener('click', () => showView('login'));
+  btnShowLogin.addEventListener('click', () => showView('login'));
+  btnShowLoginFromRecover.addEventListener('click', () => showView('login'));
+  linkEsqueci.addEventListener('click', (e) => {
+    e.preventDefault();
+    recoverEmail.value = '';
+    clearMsgs();
+    showView('recover');
+  });
 
   if (mobileQuery.addEventListener) mobileQuery.addEventListener('change', syncLayoutState);
   else mobileQuery.addListener(syncLayoutState);
@@ -313,6 +326,26 @@ document.addEventListener('DOMContentLoaded', () => {
       showMsg('msg-register', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
       setLoading(btnRegisterSubmit, false);
+    }
+  });
+
+  document.getElementById('form-recover').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    setLoading(btnRecoverSubmit, true);
+
+    try {
+      const result = await postJSON('/api/auth/forgot-password', {
+        perfil: activeProfile,
+        email: form.email.value,
+      });
+
+      if (result.error) showMsg('msg-recover', result.error, 'error');
+      else showMsg('msg-recover', result.message || 'Solicitacao recebida com sucesso.', 'success');
+    } catch {
+      showMsg('msg-recover', 'Erro de conex\u00E3o. Tente novamente.', 'error');
+    } finally {
+      setLoading(btnRecoverSubmit, false);
     }
   });
 

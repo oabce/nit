@@ -269,6 +269,26 @@
           </button>
         </form>
 
+        <form id="form-recover" class="space-y-3 hidden" novalidate>
+          <div class="msg" id="msg-recover"></div>
+          <p class="text-[11px] leading-relaxed text-slate-500">
+            Informe seu e-mail de acesso para receber as instrucoes de recuperacao de senha.
+          </p>
+          <input class="field" id="recover-email" type="email" name="email" placeholder="E-mail" required />
+          <button type="submit" id="btn-recover-submit"
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white
+                         transition-all duration-150 hover:-translate-y-0.5
+                         hover:shadow-lg active:translate-y-0
+                         flex items-center justify-center gap-2">
+            <span>Recuperar senha</span>
+            <i class="fas fa-spinner fa-spin hidden btn-spinner"></i>
+          </button>
+          <button type="button" id="btn-show-login-from-recover"
+                  class="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors pt-0.5">
+            Voltar para o login
+          </button>
+        </form>
+
       </div>
       <!-- ── fim Área do formulário ────────────────────────────── -->
 
