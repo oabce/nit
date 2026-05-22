@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formIcon.alt          = cfg.title;
     formTitle.textContent = cfg.title;
     formSub.textContent   = cfg.sub;
-    linkEsqueci.style.color = cfg.color;
+    // linkEsqueci.style.color = cfg.color;
 
     [btnLoginSubmit, btnRegisterSubmit].forEach(btn => {
       btn.style.background = cfg.color;
@@ -96,8 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showView('login');
     clearMsgs();
-
-    card.classList.toggle('expand-left', isLeft);
+    
+    card.classList.remove('expand-left');
+    // card.classList.toggle('expand-left', isLeft);
 
     const expandedW = cssVar('--welcome-w') + cssVar('--form-w');
 
