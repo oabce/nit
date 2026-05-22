@@ -134,23 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
       gsap.set(formArea, {
         display: 'flex',
         height: 'auto',
-      });
-
-      const expandedHeight = formArea.scrollHeight;
-      gsap.set(formArea, { height: 0, opacity: 0 });
-
-      gsap.timeline({
-        onComplete: () => {
-          formArea.style.height = 'auto';
-          isAnimating = false;
-        },
-      }).to(formArea, {
-        height: expandedHeight,
         opacity: 1,
-        duration: 0.35,
-        ease: 'power2.out',
       });
-
+      isAnimating = false;
       return;
     }
 
@@ -204,12 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (isMobileLayout()) {
-      gsap.timeline({ onComplete: finalizeClose }).to(formArea, {
-        height: 0,
+      gsap.set(formArea, {
+        display: 'none',
         opacity: 0,
-        duration: 0.25,
-        ease: 'power2.inOut',
+        height: 0,
       });
+      finalizeClose();
       return;
     }
 
