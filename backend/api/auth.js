@@ -94,4 +94,38 @@ async function register(req, res) {
   }
 }
 
-module.exports = { login, register };
+async function forgotPassword(req, res) {
+  try {
+    const { perfil, email } = await readBody(req);
+
+    if (!perfil || !email) {
+      return json(res, 400, { error: 'Perfil e e-mail sao obrigatorios.' });
+    }
+
+    if (!db) {
+      return json(res, 503, { error: 'Banco de dados nao configurado ainda.' });
+    }
+
+    const [rows] = await db.execute(
+      `SELECT id
+       FROM usuarios
+       WHERE email = ? AND perfil = ?
+       LIMIT 1`,
+      [email, perfil]
+    );
+
+    if (rows.length === 0) {
+      return json(res, 404, { error: 'Nenhum usuario encontrado com esse e-mail para o perfil selecionado.' });
+    }
+
+    json(res, 200, {
+      success: true,
+      message: 'Solicitacao recebida. Procure o administrador do sistema para redefinir sua senha.',
+    });
+  } catch (err) {
+    console.error('[auth/forgot-password]', err.message);
+    json(res, 500, { error: 'Erro interno no servidor.' });
+  }
+}
+
+module.exports = { login, register, forgotPassword };
