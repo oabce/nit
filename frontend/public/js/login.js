@@ -1,149 +1,226 @@
-// login.js – Tela de seleção de perfil e autenticação
+// Login screen profile selection and auth flow.
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  const card      = document.getElementById('card');
-  const formArea  = document.getElementById('form-area');
-  const formIcon  = document.getElementById('form-icon');
+  const card = document.getElementById('card');
+  const formArea = document.getElementById('form-area');
+  const formIcon = document.getElementById('form-icon');
   const formTitle = document.getElementById('form-title');
-  const formSub   = document.getElementById('form-sub');
-  const linkEsqueci       = document.getElementById('link-esqueci');
-  const btnLoginSubmit    = document.getElementById('btn-login-submit');
+  const formSub = document.getElementById('form-sub');
+  const btnLoginSubmit = document.getElementById('btn-login-submit');
   const btnRegisterSubmit = document.getElementById('btn-register-submit');
-  const btnShowRegister   = document.getElementById('btn-show-register');
-  const regOab            = document.getElementById('reg-oab');
-  const regUsuario        = document.getElementById('reg-usuario');
-  const loginIdentifier   = document.getElementById('login-identifier');
+  const btnShowRegister = document.getElementById('btn-show-register');
+  const regOab = document.getElementById('reg-oab');
+  const regUsuario = document.getElementById('reg-usuario');
+  const loginIdentifier = document.getElementById('login-identifier');
+  const mobileQuery = window.matchMedia('(max-width: 767px)');
 
   let activeProfile = null;
-  let isAnimating   = false;
+  let isAnimating = false;
 
   function cssVar(name) {
     return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
   }
 
-  // ── Configuração por perfil ───────────────────────────────────
+  function isMobileLayout() {
+    return mobileQuery.matches;
+  }
+
+  function syncLayoutState() {
+    gsap.killTweensOf([card, formArea]);
+
+    if (activeProfile === null) {
+      card.style.width = '';
+      card.classList.remove('expand-left');
+      gsap.set(formArea, {
+        display: 'none',
+        opacity: 0,
+        height: isMobileLayout() ? 0 : 'auto',
+      });
+      return;
+    }
+
+    card.classList.remove('expand-left');
+    gsap.set(formArea, {
+      display: 'flex',
+      opacity: 1,
+      height: 'auto',
+    });
+
+    if (isMobileLayout()) {
+      card.style.width = '';
+    } else {
+      card.style.width = `${cssVar('--welcome-w') + cssVar('--form-w')}px`;
+    }
+  }
+
   const PROFILES = {
     advogado: {
-      icon:            '/assets/imgs/advogado.png',
-      title:           'Advogado',
-      sub:             'Acesso ao sistema OAB/CE',
-      color:           '#be1622',
-      colorDark:       '#9c121c',
-      focusCls:        'field-red',
-      showOab:         true,
-      showUsuario:     false,
-      loginField:      { name: 'oab',     placeholder: 'Número OAB', type: 'text' },
+      icon: '/assets/imgs/advogado.png',
+      title: 'Advogado',
+      sub: 'Acesso ao sistema OAB/CE',
+      color: '#be1622',
+      colorDark: '#9c121c',
+      focusCls: 'field-red',
+      showOab: true,
+      showUsuario: false,
+      loginField: { name: 'oab', placeholder: 'N\u00FAmero OAB', type: 'text' },
     },
     colaborador: {
-      icon:            '/assets/imgs/funcionarios.png',
-      title:           'Colaborador',
-      sub:             'Acesso ao sistema NIT',
-      color:           '#1b365d',
-      colorDark:       '#142846',
-      focusCls:        '',
-      showOab:         false,
-      showUsuario:     true,
-      loginField:      { name: 'usuario', placeholder: 'Usuário',     type: 'text' },
+      icon: '/assets/imgs/funcionarios.png',
+      title: 'Colaborador',
+      sub: 'Acesso ao sistema NIT',
+      color: '#1b365d',
+      colorDark: '#142846',
+      focusCls: '',
+      showOab: false,
+      showUsuario: true,
+      loginField: { name: 'usuario', placeholder: 'Usu\u00E1rio', type: 'text' },
     },
   };
 
-  // ── Abre o formulário ─────────────────────────────────────────
   function openProfile(profile) {
     if (isAnimating) return;
 
-    // Se já tem um perfil aberto, fecha primeiro e reabre com o novo
     if (activeProfile !== null) {
       closeProfile(() => openProfile(profile));
       return;
     }
 
-    isAnimating   = true;
+    isAnimating = true;
     activeProfile = profile;
 
-    const cfg    = PROFILES[profile];
-    const isLeft = profile === 'colaborador';
+    const cfg = PROFILES[profile];
 
-    // Cabeçalho e cores
-    formIcon.src          = cfg.icon;
-    formIcon.alt          = cfg.title;
+    formIcon.src = cfg.icon;
+    formIcon.alt = cfg.title;
     formTitle.textContent = cfg.title;
-    formSub.textContent   = cfg.sub;
-    // linkEsqueci.style.color = cfg.color;
+    formSub.textContent = cfg.sub;
 
-    [btnLoginSubmit, btnRegisterSubmit].forEach(btn => {
+    [btnLoginSubmit, btnRegisterSubmit].forEach((btn) => {
       btn.style.background = cfg.color;
-      btn.onmouseenter = () => btn.style.background = cfg.colorDark;
-      btn.onmouseleave = () => btn.style.background = cfg.color;
+      btn.onmouseenter = () => {
+        btn.style.background = cfg.colorDark;
+      };
+      btn.onmouseleave = () => {
+        btn.style.background = cfg.color;
+      };
     });
-    btnShowRegister.style.borderColor = cfg.color;
-    btnShowRegister.style.color       = cfg.color;
 
-    document.querySelectorAll('#form-area .field').forEach(f => {
-      f.classList.remove('field-red');
-      if (cfg.focusCls) f.classList.add(cfg.focusCls);
+    btnShowRegister.style.borderColor = cfg.color;
+    btnShowRegister.style.color = cfg.color;
+
+    document.querySelectorAll('#form-area .field').forEach((field) => {
+      field.classList.remove('field-red');
+      if (cfg.focusCls) field.classList.add(cfg.focusCls);
     });
 
     regOab.style.display = cfg.showOab ? 'block' : 'none';
-    regOab.required      = cfg.showOab;
+    regOab.required = cfg.showOab;
 
     regUsuario.style.display = cfg.showUsuario ? 'block' : 'none';
-    regUsuario.required      = cfg.showUsuario;
+    regUsuario.required = cfg.showUsuario;
 
-    loginIdentifier.name        = cfg.loginField.name;
+    loginIdentifier.name = cfg.loginField.name;
     loginIdentifier.placeholder = cfg.loginField.placeholder;
-    loginIdentifier.type        = cfg.loginField.type;
+    loginIdentifier.type = cfg.loginField.type;
 
     showView('login');
     clearMsgs();
-    
+
     card.classList.remove('expand-left');
-    // card.classList.toggle('expand-left', isLeft);
+    gsap.killTweensOf([card, formArea]);
 
-    const expandedW = cssVar('--welcome-w') + cssVar('--form-w');
+    if (isMobileLayout()) {
+      gsap.set(formArea, {
+        display: 'flex',
+        height: 'auto',
+      });
 
-    gsap.set(formArea, { opacity: 0 });
+      const expandedHeight = formArea.scrollHeight;
+      gsap.set(formArea, { height: 0, opacity: 0 });
 
-    const tl = gsap.timeline({ onComplete: () => isAnimating = false });
+      gsap.timeline({
+        onComplete: () => {
+          formArea.style.height = 'auto';
+          isAnimating = false;
+        },
+      }).to(formArea, {
+        height: expandedHeight,
+        opacity: 1,
+        duration: 0.35,
+        ease: 'power2.out',
+      });
 
-    // 1. Card expande
+      return;
+    }
+
+    const expandedWidth = cssVar('--welcome-w') + cssVar('--form-w');
+
+    gsap.set(formArea, {
+      display: 'flex',
+      height: 'auto',
+      opacity: 0,
+    });
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        isAnimating = false;
+      },
+    });
+
     tl.to(card, {
-      width: expandedW,
+      width: expandedWidth,
       duration: 0.5,
       ease: 'power4.inOut',
     });
 
-    // 2. Formulário aparece com fade rápido
-    tl.to(formArea, {
-      opacity: 1,
-      duration: 0.18,
-      ease: 'power2.out',
-    }, '-=0.05');
+    tl.to(
+      formArea,
+      {
+        opacity: 1,
+        duration: 0.18,
+        ease: 'power2.out',
+      },
+      '-=0.05',
+    );
   }
 
-  // ── Fecha o formulário ────────────────────────────────────────
   function closeProfile(onDone) {
     if (isAnimating) return;
     isAnimating = true;
+    gsap.killTweensOf([card, formArea]);
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        card.style.width = '';
-        card.classList.remove('expand-left');
-        activeProfile = null;
-        isAnimating   = false;
-        if (onDone) onDone();
-      },
-    });
+    const finalizeClose = () => {
+      card.style.width = '';
+      card.classList.remove('expand-left');
+      activeProfile = null;
+      isAnimating = false;
+      gsap.set(formArea, {
+        display: 'none',
+        opacity: 0,
+        height: isMobileLayout() ? 0 : 'auto',
+      });
+      if (onDone) onDone();
+    };
 
-    // 1. Formulário some com fade rápido
+    if (isMobileLayout()) {
+      gsap.timeline({ onComplete: finalizeClose }).to(formArea, {
+        height: 0,
+        opacity: 0,
+        duration: 0.25,
+        ease: 'power2.inOut',
+      });
+      return;
+    }
+
+    const tl = gsap.timeline({ onComplete: finalizeClose });
+
     tl.to(formArea, {
       opacity: 0,
       duration: 0.15,
       ease: 'power2.in',
     });
 
-    // 2. Card recolhe
     tl.to(card, {
       width: cssVar('--welcome-w'),
       duration: 0.45,
@@ -151,36 +228,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Alterna login / cadastro ──────────────────────────────────
   function showView(view) {
-    document.getElementById('form-login').classList.toggle('hidden',    view !== 'login');
+    document.getElementById('form-login').classList.toggle('hidden', view !== 'login');
     document.getElementById('form-register').classList.toggle('hidden', view !== 'register');
   }
 
   function clearMsgs() {
-    ['msg-login', 'msg-register'].forEach(id => {
+    ['msg-login', 'msg-register'].forEach((id) => {
       const el = document.getElementById(id);
       el.textContent = '';
-      el.className   = 'msg';
+      el.className = 'msg';
     });
   }
 
-  // ── Listeners ─────────────────────────────────────────────────
-  document.getElementById('btn-colaborador').addEventListener('click', e => {
-    e.preventDefault(); openProfile('colaborador');
-  });
-  document.getElementById('btn-advogado').addEventListener('click', e => {
-    e.preventDefault(); openProfile('advogado');
-  });
-  document.getElementById('btn-back').addEventListener('click', closeProfile);
-  document.getElementById('btn-show-register').addEventListener('click', () => showView('register'));
-  document.getElementById('btn-show-login').addEventListener('click',    () => showView('login'));
-
-  // ── Feedback ──────────────────────────────────────────────────
   function showMsg(id, text, type) {
     const el = document.getElementById(id);
     el.textContent = text;
-    el.className   = `msg ${type}`;
+    el.className = `msg ${type}`;
   }
 
   function setLoading(btn, loading) {
@@ -190,59 +254,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function postJSON(url, data) {
     const res = await fetch(url, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(data),
+      body: JSON.stringify(data),
     });
     return res.json();
   }
 
-  // ── Login ─────────────────────────────────────────────────────
-  document.getElementById('form-login').addEventListener('submit', async e => {
+  document.getElementById('btn-colaborador').addEventListener('click', (e) => {
+    e.preventDefault();
+    openProfile('colaborador');
+  });
+
+  document.getElementById('btn-advogado').addEventListener('click', (e) => {
+    e.preventDefault();
+    openProfile('advogado');
+  });
+
+  document.getElementById('btn-back').addEventListener('click', closeProfile);
+  document.getElementById('btn-show-register').addEventListener('click', () => showView('register'));
+  document.getElementById('btn-show-login').addEventListener('click', () => showView('login'));
+
+  if (mobileQuery.addEventListener) mobileQuery.addEventListener('change', syncLayoutState);
+  else mobileQuery.addListener(syncLayoutState);
+
+  document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
     setLoading(btnLoginSubmit, true);
+
     try {
       const loginPayload = { perfil: activeProfile, senha: form.senha.value };
       loginPayload[loginIdentifier.name] = loginIdentifier.value;
+
       const result = await postJSON('/api/auth/login', loginPayload);
       if (result.error) showMsg('msg-login', result.error, 'error');
       else showMsg('msg-login', 'Login realizado com sucesso!', 'success');
     } catch {
-      showMsg('msg-login', 'Erro de conexão. Tente novamente.', 'error');
+      showMsg('msg-login', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
       setLoading(btnLoginSubmit, false);
     }
   });
 
-  // ── Cadastro ──────────────────────────────────────────────────
-  document.getElementById('form-register').addEventListener('submit', async e => {
+  document.getElementById('form-register').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
+
     if (form.senha.value !== form.confirmar.value) {
-      showMsg('msg-register', 'As senhas não coincidem.', 'error');
+      showMsg('msg-register', 'As senhas n\u00E3o coincidem.', 'error');
       return;
     }
+
     setLoading(btnRegisterSubmit, true);
+
     try {
       const payload = {
         perfil: activeProfile,
-        nome:   form.nome.value,
-        cpf:    form.cpf.value,
-        email:  form.email.value,
-        senha:  form.senha.value,
+        nome: form.nome.value,
+        cpf: form.cpf.value,
+        email: form.email.value,
+        senha: form.senha.value,
       };
-      if (activeProfile === 'advogado')    payload.oab     = form.oab.value;
+
+      if (activeProfile === 'advogado') payload.oab = form.oab.value;
       if (activeProfile === 'colaborador') payload.usuario = form.usuario.value;
 
       const result = await postJSON('/api/auth/register', payload);
       if (result.error) showMsg('msg-register', result.error, 'error');
-      else showMsg('msg-register', 'Conta criada! Faça login para continuar.', 'success');
+      else showMsg('msg-register', 'Conta criada! Fa\u00E7a login para continuar.', 'success');
     } catch {
-      showMsg('msg-register', 'Erro de conexão. Tente novamente.', 'error');
+      showMsg('msg-register', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
       setLoading(btnRegisterSubmit, false);
     }
   });
 
+  syncLayoutState();
 });
