@@ -18,17 +18,18 @@ function createSmtpClient(initialSock) {
   function tryResolve() {
     if (!resolver) return;
     let pos = 0;
+    const collected = [];
     while (pos < buf.length) {
       const end = buf.indexOf('\r\n', pos);
       if (end === -1) break;
       const line = buf.slice(pos, end);
-      // Final line of SMTP response has "ddd " (space), not "ddd-" (dash)
+      collected.push(line);
       if (/^\d{3} /.test(line)) {
         buf = buf.slice(end + 2);
         const code = parseInt(line.slice(0, 3), 10);
         const r = resolver;
         resolver = null;
-        r({ code, line });
+        r({ code, line, lines: collected });
         return;
       }
       pos = end + 2;
@@ -82,7 +83,6 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
   let c;
 
   if (secure) {
-    // Porta 465 — TLS direto
     const tlsSock = await new Promise((resolve, reject) => {
       let s;
       s = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(s));
@@ -91,25 +91,44 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     c = createSmtpClient(tlsSock);
     const greeting = await c.read();
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
-    await c.expect(250, `EHLO nit.oabce.org.br`);
+    const ehlo = await c.expect(250, 'EHLO nit.oabce.org.br');
+    console.log('[mailer] EHLO (secure):', ehlo.lines);
   } else {
-    // Porta 587 — STARTTLS
     const plainSock = await new Promise((resolve, reject) => {
       const s = net.connect(port, host, () => resolve(s));
       s.once('error', reject);
     });
     c = createSmtpClient(plainSock);
     const greeting = await c.read();
+    console.log('[mailer] Greeting:', greeting.line);
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
-    await c.expect(250, `EHLO nit.oabce.org.br`);
+    const ehlo1 = await c.expect(250, 'EHLO nit.oabce.org.br');
+    console.log('[mailer] EHLO antes STARTTLS:', ehlo1.lines);
     await c.expect(220, 'STARTTLS');
     await c.upgradeTls(host);
-    await c.expect(250, `EHLO nit.oabce.org.br`);
+    const ehlo2 = await c.expect(250, 'EHLO nit.oabce.org.br');
+    console.log('[mailer] EHLO após STARTTLS:', ehlo2.lines);
   }
 
-  // AUTH PLAIN: envia "\0usuario\0senha" em base64 de uma vez
+  console.log('[mailer] Tentando AUTH PLAIN para usuario:', user);
   const plainCreds = b64('\0' + user + '\0' + pass);
-  await c.expect(235, `AUTH PLAIN ${plainCreds}`);
+  c.write(`AUTH PLAIN ${plainCreds}`);
+  const authResp = await c.read();
+  console.log('[mailer] AUTH PLAIN resp:', authResp.line);
+
+  if (authResp.code !== 235) {
+    // Tenta AUTH LOGIN como fallback
+    console.log('[mailer] AUTH PLAIN falhou, tentando AUTH LOGIN...');
+    c.write('AUTH LOGIN');
+    await c.read(); // 334 Username
+    c.write(b64(user));
+    await c.read(); // 334 Password
+    c.write(b64(pass));
+    const loginResp = await c.read();
+    console.log('[mailer] AUTH LOGIN resp:', loginResp.line);
+    if (loginResp.code !== 235) throw new Error(`SMTP AUTH falhou: ${loginResp.line}`);
+  }
+
   await c.expect(250, `MAIL FROM:<${fromEmail}>`);
   await c.expect(250, `RCPT TO:<${to}>`);
   await c.expect(354, 'DATA');
