@@ -107,9 +107,9 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     await c.expect(250, `EHLO nit.oabce.org.br`);
   }
 
-  await c.expect(334, 'AUTH LOGIN');
-  await c.expect(334, b64(user));
-  await c.expect(235, b64(pass));
+  // AUTH PLAIN: envia "\0usuario\0senha" em base64 de uma vez
+  const plainCreds = b64('\0' + user + '\0' + pass);
+  await c.expect(235, `AUTH PLAIN ${plainCreds}`);
   await c.expect(250, `MAIL FROM:<${fromEmail}>`);
   await c.expect(250, `RCPT TO:<${to}>`);
   await c.expect(354, 'DATA');
