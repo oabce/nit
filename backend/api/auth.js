@@ -1,4 +1,6 @@
+const crypto = require('crypto');
 const db = require('../db');
+const { sendResetEmail } = require('./mailer');
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -206,20 +208,15 @@ async function forgotPassword(req, res) {
 
     if (perfil === 'advogado') {
       [rows] = await db.execute(
-        `SELECT id
-           FROM usuarios
-          WHERE email = ?
-            AND numero_oab IS NOT NULL
-            AND numero_oab <> ''
+        `SELECT id FROM usuarios
+          WHERE email = ? AND numero_oab IS NOT NULL AND numero_oab <> '' AND ativo = 1
           LIMIT 1`,
         [email]
       );
     } else if (perfil === 'colaborador') {
       [rows] = await db.execute(
-        `SELECT id
-           FROM usuarios
-          WHERE email = ?
-            AND (numero_oab IS NULL OR numero_oab = '')
+        `SELECT id FROM usuarios
+          WHERE email = ? AND (numero_oab IS NULL OR numero_oab = '') AND ativo = 1
           LIMIT 1`,
         [email]
       );
@@ -227,18 +224,62 @@ async function forgotPassword(req, res) {
       return json(res, 400, { error: 'Perfil invalido.' });
     }
 
+    // Resposta genérica para não revelar se o e-mail existe
     if (rows.length === 0) {
-      return json(res, 404, { error: 'Nenhum usuario encontrado com esse e-mail para o perfil selecionado.' });
+      return json(res, 200, { success: true, message: 'Se o e-mail estiver cadastrado, voce recebera as instrucoes em breve.' });
     }
 
-    json(res, 200, {
-      success: true,
-      message: 'Solicitacao recebida. Procure o administrador do sistema para redefinir sua senha.',
-    });
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await db.execute(
+      `UPDATE usuarios SET reset_token = ?, reset_token_expires = ? WHERE id = ?`,
+      [token, expires, rows[0].id]
+    );
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const resetLink = `${appUrl}/reset-senha.html?token=${token}`;
+
+    await sendResetEmail(email, resetLink);
+
+    json(res, 200, { success: true, message: 'Se o e-mail estiver cadastrado, voce recebera as instrucoes em breve.' });
   } catch (err) {
     console.error('[auth/forgot-password]', err.message);
     json(res, 500, { error: 'Erro interno no servidor.' });
   }
 }
 
-module.exports = { login, register, forgotPassword };
+async function resetPassword(req, res) {
+  try {
+    const body = await readBody(req);
+    const token = cleanValue(body.token);
+    const senha = cleanValue(body.senha);
+
+    if (!token || !senha) {
+      return json(res, 400, { error: 'Token e nova senha sao obrigatorios.' });
+    }
+
+    const [rows] = await db.execute(
+      `SELECT id FROM usuarios
+        WHERE reset_token = ? AND reset_token_expires > NOW() AND ativo = 1
+        LIMIT 1`,
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return json(res, 400, { error: 'Link invalido ou expirado. Solicite um novo.' });
+    }
+
+    await db.execute(
+      `UPDATE usuarios SET senha_hash = SHA2(?, 256), reset_token = NULL, reset_token_expires = NULL WHERE id = ?`,
+      [senha, rows[0].id]
+    );
+
+    json(res, 200, { success: true, message: 'Senha redefinida com sucesso.' });
+  } catch (err) {
+    console.error('[auth/reset-password]', err.message);
+    json(res, 500, { error: 'Erro interno no servidor.' });
+  }
+}
+
+module.exports = { login, register, forgotPassword, resetPassword };
