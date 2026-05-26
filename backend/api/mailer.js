@@ -1,11 +1,27 @@
 'use strict';
-const envPath = require('path').join(__dirname, '../../.env');
-const envExamplePath = require('path').join(__dirname, '../../.env.example');
 const fs = require('fs');
-require('dotenv').config({
-  path: fs.existsSync(envPath) ? envPath : envExamplePath,
-  override: true,
-});
+const path = require('path');
+
+function readEnvFile() {
+  const candidates = [
+    path.join(__dirname, '../../.env'),
+    path.join(__dirname, '../../.env.example'),
+  ];
+  for (const f of candidates) {
+    if (fs.existsSync(f)) {
+      const content = fs.readFileSync(f, 'utf8');
+      const match = content.match(/^SMTP_PASS=(.+)$/m);
+      if (match) {
+        const val = match[1].replace(/\r$/, '');
+        console.log('[mailer] SMTP_PASS do arquivo — hex:', Buffer.from(val).toString('hex'), '| tamanho:', val.length);
+        return val;
+      }
+    }
+  }
+  return null;
+}
+
+const SMTP_PASS_FROM_FILE = readEnvFile();
 const net = require('net');
 const tls = require('tls');
 
@@ -165,7 +181,7 @@ async function sendResetEmail(toEmail, resetLink) {
     port: process.env.SMTP_PORT,
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    pass: SMTP_PASS_FROM_FILE || process.env.SMTP_PASS,
     from: `"NIT - OAB/CE" <${from}>`,
     to: toEmail,
     subject: 'Redefinição de senha - NIT OAB/CE',
