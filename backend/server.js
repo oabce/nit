@@ -44,6 +44,7 @@ const {
   login,
   register,
   forgotPassword,
+  getAccessRequestStatus,
   listAccessRequests,
   approveAccessRequest,
   rejectAccessRequest,
@@ -68,6 +69,7 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/auth/login' && req.method === 'POST') return login(req, res);
   if (req.url === '/api/auth/register' && req.method === 'POST') return register(req, res);
   if (req.url === '/api/auth/forgot-password' && req.method === 'POST') return forgotPassword(req, res);
+  if (req.url === '/api/auth/request-status' && req.method === 'POST') return getAccessRequestStatus(req, res);
   if (req.url === '/api/admin/access-requests' && req.method === 'GET') return listAccessRequests(req, res);
 
   const approveMatch = req.url.match(/^\/api\/admin\/access-requests\/(\d+)\/approve$/);

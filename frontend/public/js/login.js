@@ -12,14 +12,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLoginSubmit = document.getElementById('btn-login-submit');
   const btnRegisterSubmit = document.getElementById('btn-register-submit');
   const btnRecoverSubmit = document.getElementById('btn-recover-submit');
+  const btnStatusSubmit = document.getElementById('btn-status-submit');
   const btnShowRegister = document.getElementById('btn-show-register');
+  const btnShowStatus = document.getElementById('btn-show-status');
   const btnShowLogin = document.getElementById('btn-show-login');
   const btnShowLoginFromRecover = document.getElementById('btn-show-login-from-recover');
+  const btnShowLoginFromStatus = document.getElementById('btn-show-login-from-status');
   const linkEsqueci = document.getElementById('link-esqueci');
   const regOab = document.getElementById('reg-oab');
   const regUsuario = document.getElementById('reg-usuario');
   const loginIdentifier = document.getElementById('login-identifier');
   const recoverEmail = document.getElementById('recover-email');
+  const statusEmail = document.getElementById('status-email');
+  const statusCpf = document.getElementById('status-cpf');
+  const statusResult = document.getElementById('status-result');
+  const statusBadge = document.getElementById('status-badge');
+  const statusName = document.getElementById('status-name');
+  const statusDetail = document.getElementById('status-detail');
+  const statusGuidance = document.getElementById('status-guidance');
   const mobileQuery = window.matchMedia('(max-width: 767px)');
 
   let activeProfile = null;
@@ -104,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formTitle.textContent = cfg.title;
     formSub.textContent = cfg.sub;
 
-    [btnLoginSubmit, btnRegisterSubmit, btnRecoverSubmit].forEach((btn) => {
+    [btnLoginSubmit, btnRegisterSubmit, btnRecoverSubmit, btnStatusSubmit].forEach((btn) => {
       btn.style.background = cfg.color;
       btn.onmouseenter = () => {
         btn.style.background = cfg.colorDark;
@@ -226,14 +236,47 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('form-login').classList.toggle('hidden', view !== 'login');
     document.getElementById('form-register').classList.toggle('hidden', view !== 'register');
     document.getElementById('form-recover').classList.toggle('hidden', view !== 'recover');
+    document.getElementById('form-status').classList.toggle('hidden', view !== 'status');
   }
 
   function clearMsgs() {
-    ['msg-login', 'msg-register', 'msg-recover'].forEach((id) => {
+    ['msg-login', 'msg-register', 'msg-recover', 'msg-status'].forEach((id) => {
       const el = document.getElementById(id);
       el.textContent = '';
       el.className = 'msg';
     });
+  }
+
+  function resetStatusResult() {
+    statusResult.classList.add('hidden');
+    statusBadge.textContent = '';
+    statusBadge.className = 'mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold';
+    statusName.textContent = '';
+    statusDetail.textContent = '';
+    statusGuidance.textContent = '';
+  }
+
+  function renderStatusResult(solicitacao) {
+    const badgeMap = {
+      pendente: 'bg-amber-100 text-amber-700',
+      aprovado: 'bg-emerald-100 text-emerald-700',
+      recusado: 'bg-rose-100 text-rose-700',
+      desativado: 'bg-slate-200 text-slate-700',
+    };
+
+    const labelMap = {
+      pendente: 'Em revisao',
+      aprovado: 'Aprovada',
+      recusado: 'Recusada',
+      desativado: 'Desativada',
+    };
+
+    statusBadge.textContent = labelMap[solicitacao.status] || 'Sem status';
+    statusBadge.className = `mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${badgeMap[solicitacao.status] || 'bg-slate-100 text-slate-700'}`;
+    statusName.textContent = solicitacao.nome || 'Solicitacao encontrada';
+    statusDetail.textContent = `Perfil: ${solicitacao.perfil} | Atualizado em: ${new Date(solicitacao.atualizadoEm).toLocaleString('pt-BR')}`;
+    statusGuidance.textContent = solicitacao.orientacao || '';
+    statusResult.classList.remove('hidden');
   }
 
   function showMsg(id, text, type) {
@@ -268,8 +311,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-back').addEventListener('click', closeProfile);
   document.getElementById('btn-show-register').addEventListener('click', () => showView('register'));
+  btnShowStatus.addEventListener('click', () => {
+    statusEmail.value = '';
+    statusCpf.value = '';
+    clearMsgs();
+    resetStatusResult();
+    showView('status');
+  });
   btnShowLogin.addEventListener('click', () => showView('login'));
   btnShowLoginFromRecover.addEventListener('click', () => showView('login'));
+  btnShowLoginFromStatus.addEventListener('click', () => showView('login'));
   linkEsqueci.addEventListener('click', (e) => {
     e.preventDefault();
     recoverEmail.value = '';
@@ -349,6 +400,32 @@ document.addEventListener('DOMContentLoaded', () => {
       showMsg('msg-recover', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
       setLoading(btnRecoverSubmit, false);
+    }
+  });
+
+  document.getElementById('form-status').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setLoading(btnStatusSubmit, true);
+    clearMsgs();
+    resetStatusResult();
+
+    try {
+      const result = await postJSON('/api/auth/request-status', {
+        perfil: activeProfile,
+        email: statusEmail.value,
+        cpf: statusCpf.value,
+      });
+
+      if (result.error) {
+        showMsg('msg-status', result.error, 'error');
+      } else {
+        renderStatusResult(result.solicitacao);
+        showMsg('msg-status', 'Andamento localizado com sucesso.', 'success');
+      }
+    } catch {
+      showMsg('msg-status', 'Erro de conex\u00E3o. Tente novamente.', 'error');
+    } finally {
+      setLoading(btnStatusSubmit, false);
     }
   });
 
