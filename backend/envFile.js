@@ -24,7 +24,7 @@ for (const f of candidates) {
 }
 
 function get(key) {
-  return process.env[key] || parsed[key] || null;
+  return parsed[key] || process.env[key] || null;
 }
 
 module.exports = { get };
