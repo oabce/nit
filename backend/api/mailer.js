@@ -1,27 +1,5 @@
 'use strict';
-const fs = require('fs');
-const path = require('path');
-
-function readEnvFile() {
-  const candidates = [
-    path.join(__dirname, '../../.env'),
-    path.join(__dirname, '../../.env.example'),
-  ];
-  for (const f of candidates) {
-    if (fs.existsSync(f)) {
-      const content = fs.readFileSync(f, 'utf8');
-      const match = content.match(/^SMTP_PASS=(.+)$/m);
-      if (match) {
-        const val = match[1].replace(/\r$/, '');
-        console.log('[mailer] SMTP_PASS do arquivo — hex:', Buffer.from(val).toString('hex'), '| tamanho:', val.length);
-        return val;
-      }
-    }
-  }
-  return null;
-}
-
-const SMTP_PASS_FROM_FILE = readEnvFile();
+const envFile = require('../envFile');
 const net = require('net');
 const tls = require('tls');
 
@@ -113,8 +91,7 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     c = createSmtpClient(tlsSock);
     const greeting = await c.read();
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
-    const ehlo = await c.expect(250, 'EHLO nit.oabce.org.br');
-    console.log('[mailer] EHLO completo:', JSON.stringify(ehlo.lines));
+    await c.expect(250, 'EHLO nit.oabce.org.br');
   } else {
     const plainSock = await new Promise((resolve, reject) => {
       const s = net.connect(port, host, () => resolve(s));
@@ -122,33 +99,24 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     });
     c = createSmtpClient(plainSock);
     const greeting = await c.read();
-    console.log('[mailer] Greeting:', greeting.line);
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
-    const ehlo1 = await c.expect(250, 'EHLO nit.oabce.org.br');
-    console.log('[mailer] EHLO antes STARTTLS:', ehlo1.lines);
+    await c.expect(250, 'EHLO nit.oabce.org.br');
     await c.expect(220, 'STARTTLS');
     await c.upgradeTls(host);
-    const ehlo2 = await c.expect(250, 'EHLO nit.oabce.org.br');
-    console.log('[mailer] EHLO após STARTTLS:', ehlo2.lines);
+    await c.expect(250, 'EHLO nit.oabce.org.br');
   }
 
   const plainCreds = b64('\0' + user + '\0' + pass);
-  console.log('[mailer] base64 gerado:', plainCreds);
-  console.log('[mailer] esperado:      AHNtdHBfZ2xwaUBvYWJjZS5vcmcuYnIANGh9RSpVYlZhbXA7Q0VjcFhh');
   c.write(`AUTH PLAIN ${plainCreds}`);
   const authResp = await c.read();
-  console.log('[mailer] AUTH PLAIN resp:', authResp.line);
 
   if (authResp.code !== 235) {
-    // Tenta AUTH LOGIN como fallback
-    console.log('[mailer] AUTH PLAIN falhou, tentando AUTH LOGIN...');
     c.write('AUTH LOGIN');
-    await c.read(); // 334 Username
+    await c.read();
     c.write(b64(user));
-    await c.read(); // 334 Password
+    await c.read();
     c.write(b64(pass));
     const loginResp = await c.read();
-    console.log('[mailer] AUTH LOGIN resp:', loginResp.line);
     if (loginResp.code !== 235) throw new Error(`SMTP AUTH falhou: ${loginResp.line}`);
   }
 
@@ -177,12 +145,12 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
 async function sendResetEmail(toEmail, resetLink) {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   await sendMail({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: process.env.SMTP_SECURE === 'true',
-    user: process.env.SMTP_USER,
-    pass: SMTP_PASS_FROM_FILE || process.env.SMTP_PASS,
-    from: `"NIT - OAB/CE" <${from}>`,
+    host: envFile.get('SMTP_HOST'),
+    port: envFile.get('SMTP_PORT'),
+    secure: envFile.get('SMTP_SECURE') === 'true',
+    user: envFile.get('SMTP_USER'),
+    pass: envFile.get('SMTP_PASS'),
+    from: `"NIT - OAB/CE" <${envFile.get('SMTP_FROM') || envFile.get('SMTP_USER')}>`,
     to: toEmail,
     subject: 'Redefinição de senha - NIT OAB/CE',
     html: `

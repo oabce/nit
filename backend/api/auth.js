@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db');
 const { sendResetEmail } = require('./mailer');
+const envFile = require('../envFile');
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -237,7 +238,7 @@ async function forgotPassword(req, res) {
       [token, expires, rows[0].id]
     );
 
-    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const appUrl = envFile.get('APP_URL') || 'http://localhost:3000';
     const resetLink = `${appUrl}/reset-senha.html?token=${token}`;
 
     await sendResetEmail(email, resetLink);
