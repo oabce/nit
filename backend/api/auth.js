@@ -58,6 +58,7 @@ async function login(req, res) {
                 cpf,
                 email,
                 nome_usuario AS usuario,
+                adm,
                 ativo,
                 criado_em,
                 atualizado_em
@@ -86,6 +87,7 @@ async function login(req, res) {
                 cpf,
                 email,
                 nome_usuario AS usuario,
+                adm,
                 ativo,
                 criado_em,
                 atualizado_em
@@ -177,7 +179,7 @@ async function register(req, res) {
          ativo,
          criado_em,
          atualizado_em
-       ) VALUES (?, ?, ?, ?, ?, SHA2(?, 256), 1, NOW(), NOW())`,
+       ) VALUES (?, ?, ?, ?, ?, SHA2(?, 256), 0, NOW(), NOW())`,
       [
         nome,
         perfil === 'advogado' ? oab : null,
