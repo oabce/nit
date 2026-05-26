@@ -1,5 +1,11 @@
 'use strict';
-require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+const envPath = require('path').join(__dirname, '../../.env');
+const envExamplePath = require('path').join(__dirname, '../../.env.example');
+const fs = require('fs');
+require('dotenv').config({
+  path: fs.existsSync(envPath) ? envPath : envExamplePath,
+  override: true,
+});
 const net = require('net');
 const tls = require('tls');
 
