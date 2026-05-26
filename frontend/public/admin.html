@@ -22,6 +22,9 @@
             "nit-red": "#be1622",
           },
           fontFamily: { sans: ["Inter", "sans-serif"] },
+          backgroundImage: {
+            "footer-gradient": "linear-gradient(90deg, #981924 0%, #362942 50%, #1b365d 100%)",
+          },
         },
       },
     };
@@ -35,11 +38,11 @@
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 14px;
-      border-radius: 8px;
-      color: rgba(255,255,255,0.65);
-      font-size: 13.5px;
+      gap: 9px;
+      padding: 8px 12px;
+      border-radius: 7px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       transition: background 0.15s, color 0.15s;
@@ -48,7 +51,7 @@
     .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
     .nav-item.active { background: #fff; color: #1b365d; }
     .nav-item.active i { color: #1b365d; }
-    .nav-item i { width: 16px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
+    .nav-item i { width: 15px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); }
 
     .modal-wrap {
       position: fixed; inset: 0;
@@ -64,21 +67,21 @@
     .modal-box {
       background: #fff;
       border-radius: 16px;
-      padding: 32px;
+      padding: 28px;
       width: 100%;
-      max-width: 460px;
+      max-width: 440px;
       max-height: 90vh;
       overflow-y: auto;
-      transform: translateY(16px);
+      transform: translateY(14px);
       transition: transform 0.2s;
     }
     .modal-wrap.open .modal-box { transform: translateY(0); }
 
     .badge {
       display: inline-flex; align-items: center;
-      padding: 2px 9px;
+      padding: 2px 8px;
       border-radius: 999px;
-      font-size: 11px; font-weight: 600;
+      font-size: 10.5px; font-weight: 600;
       letter-spacing: 0.04em; text-transform: uppercase;
     }
     .badge-adv { background: #fef3c7; color: #92400e; }
@@ -88,8 +91,8 @@
       width: 100%;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 13.5px;
+      padding: 7px 11px;
+      font-size: 13px;
       transition: border-color 0.15s, box-shadow 0.15s;
       outline: none;
       font-family: inherit;
@@ -99,183 +102,180 @@
     tbody tr:hover { background: #f8fafc; }
   </style>
 </head>
-<body class="font-sans h-screen flex overflow-hidden bg-gray-50">
+<body class="font-sans h-screen flex flex-col overflow-hidden">
 
-  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
-  <aside class="w-60 flex-shrink-0 bg-nit-blue flex flex-col h-full overflow-y-auto">
-    <div class="p-5 border-b border-white/10">
-      <img src="/assets/imgs/Logo3.1.png" alt="NIT" class="h-9 object-contain" />
-      <p class="text-white/40 text-xs mt-2 font-semibold uppercase tracking-wider">Painel Admin</p>
-    </div>
-
-    <nav class="flex-1 p-3 space-y-0.5">
-      <p class="text-white/30 text-xs font-semibold uppercase tracking-wider px-3 py-2">Menu</p>
-
-      <div class="nav-item active" id="nav-pending" onclick="showSection('pending')">
-        <i class="fas fa-user-clock"></i>
-        Cadastros Pendentes
-        <span id="badge-count"
-          class="ml-auto bg-nit-red text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
-      </div>
-
-      <div class="nav-item" id="nav-create" onclick="showSection('create')">
-        <i class="fas fa-user-plus"></i>
-        Criar Usuário
-      </div>
-    </nav>
-
-    <div class="p-4 border-t border-white/10">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-          <i class="fas fa-user text-white/60 text-xs"></i>
-        </div>
-        <div class="min-w-0">
-          <p id="sidebar-name" class="text-white text-sm font-medium truncate"></p>
-          <p class="text-white/40 text-xs">Administrador</p>
-        </div>
+  <!-- ── HEADER ─────────────────────────────────────────── -->
+  <header class="bg-nit-blue flex-shrink-0 flex items-center justify-between px-6 py-2 shadow-sm z-10">
+    <img src="/assets/imgs/Logo3.1.png" alt="NIT OAB/CE" class="h-8 object-contain" />
+    <div class="flex items-center gap-3">
+      <div class="text-right hidden sm:block">
+        <p id="header-name" class="text-white text-xs font-medium leading-tight"></p>
+        <p class="text-white/40 text-xs leading-tight">Administrador</p>
       </div>
       <button onclick="logout()"
-        class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white/55
-               hover:text-white hover:bg-white/10 text-sm transition">
-        <i class="fas fa-sign-out-alt"></i> Sair
+        class="flex items-center gap-1.5 text-xs text-white/70 hover:text-white
+               bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition">
+        <i class="fas fa-sign-out-alt"></i>
+        <span class="hidden sm:inline">Sair</span>
       </button>
     </div>
-  </aside>
+  </header>
 
-  <!-- ── MAIN ───────────────────────────────────────────── -->
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <!-- ── MIDDLE: sidebar + content ─────────────────────── -->
+  <div class="flex flex-1 overflow-hidden">
 
-    <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
-      <div>
-        <h1 id="page-title" class="text-base font-semibold text-gray-800">Cadastros Pendentes</h1>
-        <p id="page-sub" class="text-xs text-gray-400 mt-0.5">Usuários aguardando aprovação</p>
+    <!-- Sidebar -->
+    <aside class="w-56 flex-shrink-0 bg-nit-blue/95 flex flex-col overflow-y-auto border-r border-white/10">
+      <nav class="flex-1 p-3 space-y-0.5 pt-4">
+        <p class="text-white/30 text-xs font-semibold uppercase tracking-wider px-3 pb-2">Menu</p>
+
+        <div class="nav-item active" id="nav-pending" onclick="showSection('pending')">
+          <i class="fas fa-user-clock"></i>
+          Cadastros Pendentes
+          <span id="badge-count"
+            class="ml-auto bg-nit-red text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+        </div>
+
+        <div class="nav-item" id="nav-create" onclick="showSection('create')">
+          <i class="fas fa-user-plus"></i>
+          Criar Usuário
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+      <div class="bg-white border-b border-gray-200 px-7 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 id="page-title" class="text-sm font-semibold text-gray-800">Cadastros Pendentes</h1>
+          <p id="page-sub" class="text-xs text-gray-400 mt-0.5">Usuários aguardando aprovação</p>
+        </div>
+        <button id="btn-refresh" onclick="loadPending()"
+          class="flex items-center gap-1.5 text-xs text-gray-500 hover:text-nit-blue
+                 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition">
+          <i class="fas fa-sync-alt"></i> Atualizar
+        </button>
       </div>
-      <button id="btn-refresh" onclick="loadPending()"
-        class="flex items-center gap-2 text-sm text-gray-500 hover:text-nit-blue hover:bg-blue-50
-               px-3 py-1.5 rounded-lg transition">
-        <i class="fas fa-sync-alt"></i> Atualizar
-      </button>
-    </header>
 
-    <main class="flex-1 overflow-y-auto p-8">
+      <main class="flex-1 overflow-y-auto p-7">
 
-      <!-- Pending section -->
-      <section id="section-pending">
-        <div id="state-loading" class="flex items-center justify-center py-20 text-gray-400 text-sm">
-          <i class="fas fa-spinner fa-spin mr-2"></i> Carregando...
-        </div>
-
-        <div id="state-empty" class="hidden flex flex-col items-center justify-center py-20 text-center">
-          <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <i class="fas fa-check text-gray-400 text-xl"></i>
+        <!-- Pending section -->
+        <section id="section-pending">
+          <div id="state-loading" class="flex items-center justify-center py-20 text-gray-400 text-sm">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Carregando...
           </div>
-          <p class="text-gray-600 font-medium">Nenhum cadastro pendente</p>
-          <p class="text-gray-400 text-sm mt-1">Todos os cadastros foram revisados.</p>
-        </div>
 
-        <div id="state-table" class="hidden bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-gray-50 border-b border-gray-200">
-                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
-                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Perfil</th>
-                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">E-mail</th>
-                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">OAB / Usuário</th>
-                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cadastrado</th>
-                <th class="px-5 py-3"></th>
-              </tr>
-            </thead>
-            <tbody id="tbody-pending" class="divide-y divide-gray-100"></tbody>
-          </table>
-        </div>
-      </section>
+          <div id="state-empty" class="hidden flex flex-col items-center justify-center py-20 text-center">
+            <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <i class="fas fa-check text-gray-400 text-lg"></i>
+            </div>
+            <p class="text-gray-600 font-medium text-sm">Nenhum cadastro pendente</p>
+            <p class="text-gray-400 text-xs mt-1">Todos os cadastros foram revisados.</p>
+          </div>
 
-      <!-- Create section -->
-      <section id="section-create" class="hidden">
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-md">
-          <h2 class="text-sm font-semibold text-gray-700 mb-5">Dados do novo usuário</h2>
-          <form id="form-create" class="space-y-4" autocomplete="off">
+          <div id="state-table" class="hidden bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
+                  <th class="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Perfil</th>
+                  <th class="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">E-mail</th>
+                  <th class="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">OAB / Usuário</th>
+                  <th class="text-left px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cadastrado</th>
+                  <th class="px-5 py-2.5"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-pending" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </section>
 
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Nome completo *</label>
-              <input name="nome" type="text" required placeholder="Nome completo" class="fi" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">E-mail *</label>
-              <input name="email" type="email" required placeholder="email@exemplo.com" class="fi" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">CPF</label>
-              <input name="cpf" type="text" placeholder="000.000.000-00" class="fi" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Perfil *</label>
-              <select name="perfil" id="create-perfil" required onchange="toggleCreate()" class="fi bg-white">
-                <option value="">Selecione...</option>
-                <option value="advogado">Advogado</option>
-                <option value="colaborador">Colaborador</option>
-              </select>
-            </div>
-            <div id="wrap-create-oab" class="hidden">
-              <label class="block text-xs font-medium text-gray-500 mb-1">Número OAB *</label>
-              <input name="oab" type="text" placeholder="CE-00000" class="fi" />
-            </div>
-            <div id="wrap-create-usr" class="hidden">
-              <label class="block text-xs font-medium text-gray-500 mb-1">Usuário *</label>
-              <input name="usuario" type="text" placeholder="nome.sobrenome" class="fi" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Senha *</label>
-              <input name="senha" type="password" required placeholder="••••••••" class="fi" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Confirmar senha *</label>
-              <input name="confirmar" type="password" required placeholder="••••••••" class="fi" />
-            </div>
+        <!-- Create section -->
+        <section id="section-create" class="hidden">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-7 max-w-md">
+            <h2 class="text-sm font-semibold text-gray-700 mb-5">Dados do novo usuário</h2>
+            <form id="form-create" class="space-y-3.5" autocomplete="off">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Nome completo *</label>
+                <input name="nome" type="text" required placeholder="Nome completo" class="fi" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">E-mail *</label>
+                <input name="email" type="email" required placeholder="email@exemplo.com" class="fi" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">CPF</label>
+                <input name="cpf" type="text" placeholder="000.000.000-00" class="fi" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Perfil *</label>
+                <select name="perfil" id="create-perfil" required onchange="toggleCreate()" class="fi bg-white">
+                  <option value="">Selecione...</option>
+                  <option value="advogado">Advogado</option>
+                  <option value="colaborador">Colaborador</option>
+                </select>
+              </div>
+              <div id="wrap-create-oab" class="hidden">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Número OAB *</label>
+                <input name="oab" type="text" placeholder="CE-00000" class="fi" />
+              </div>
+              <div id="wrap-create-usr" class="hidden">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Usuário *</label>
+                <input name="usuario" type="text" placeholder="nome.sobrenome" class="fi" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Senha *</label>
+                <input name="senha" type="password" required placeholder="••••••••" class="fi" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Confirmar senha *</label>
+                <input name="confirmar" type="password" required placeholder="••••••••" class="fi" />
+              </div>
+              <div id="msg-create" class="hidden text-xs rounded-lg px-3 py-2"></div>
+              <div class="flex gap-2.5 pt-1">
+                <button type="submit"
+                  class="flex items-center gap-1.5 bg-nit-blue hover:bg-nit-blue-dark text-white
+                         px-5 py-2 rounded-lg text-xs font-semibold transition">
+                  <i class="fas fa-plus"></i> Criar usuário
+                </button>
+                <button type="button" onclick="resetCreate()"
+                  class="px-4 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition">
+                  Limpar
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
 
-            <div id="msg-create" class="hidden text-sm rounded-lg px-3 py-2"></div>
-
-            <div class="flex gap-3 pt-1">
-              <button type="submit"
-                class="flex items-center gap-2 bg-nit-blue hover:bg-nit-blue-dark text-white
-                       px-5 py-2.5 rounded-lg text-sm font-medium transition">
-                <i class="fas fa-plus text-xs"></i> Criar usuário
-              </button>
-              <button type="button" onclick="resetCreate()"
-                class="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition">
-                Limpar
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-    </main>
+      </main>
+    </div>
   </div>
+
+  <!-- ── FOOTER ─────────────────────────────────────────── -->
+  <div class="h-1 bg-footer-gradient flex-shrink-0"></div>
 
   <!-- ── MODAL: Aprovar ─────────────────────────────────── -->
   <div id="modal-approve" class="modal-wrap" onclick="closeModal('approve')">
     <div class="modal-box" onclick="event.stopPropagation()">
-      <h3 class="text-base font-semibold text-gray-800 mb-1">Aprovar Cadastro</h3>
-      <p class="text-sm text-gray-500 mb-5">
-        Ativar a conta de <strong id="approve-nome"></strong>.
-      </p>
-      <div class="space-y-4">
+      <h3 class="text-sm font-semibold text-gray-800 mb-1">Aprovar Cadastro</h3>
+      <p class="text-xs text-gray-500 mb-4">Ativar a conta de <strong id="approve-nome"></strong>.</p>
+      <div class="space-y-3.5">
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">
             Nova senha <span class="text-gray-400">(opcional — deixe em branco para manter a senha do usuário)</span>
           </label>
           <input id="approve-senha" type="password" placeholder="••••••••" class="fi" />
         </div>
-        <div id="msg-approve" class="hidden text-sm rounded-lg px-3 py-2"></div>
-        <div class="flex gap-3">
+        <div id="msg-approve" class="hidden text-xs rounded-lg px-3 py-2"></div>
+        <div class="flex gap-2.5">
           <button onclick="confirmApprove()"
-            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
-                   px-5 py-2 rounded-lg text-sm font-medium transition">
-            <i class="fas fa-check text-xs"></i> Aprovar
+            class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white
+                   px-4 py-2 rounded-lg text-xs font-semibold transition">
+            <i class="fas fa-check"></i> Aprovar
           </button>
           <button onclick="closeModal('approve')"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition">
+            class="px-4 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition">
             Cancelar
           </button>
         </div>
@@ -286,8 +286,8 @@
   <!-- ── MODAL: Editar ──────────────────────────────────── -->
   <div id="modal-edit" class="modal-wrap" onclick="closeModal('edit')">
     <div class="modal-box" onclick="event.stopPropagation()">
-      <h3 class="text-base font-semibold text-gray-800 mb-5">Editar Cadastro</h3>
-      <form id="form-edit" class="space-y-4" onsubmit="confirmEdit(event)">
+      <h3 class="text-sm font-semibold text-gray-800 mb-4">Editar Cadastro</h3>
+      <form id="form-edit" class="space-y-3.5" onsubmit="confirmEdit(event)">
         <input type="hidden" id="edit-id" />
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Nome completo *</label>
@@ -315,14 +315,14 @@
           </label>
           <input id="edit-senha" type="password" placeholder="Deixe em branco para não alterar" class="fi" />
         </div>
-        <div id="msg-edit" class="hidden text-sm rounded-lg px-3 py-2"></div>
-        <div class="flex gap-3 pt-1">
+        <div id="msg-edit" class="hidden text-xs rounded-lg px-3 py-2"></div>
+        <div class="flex gap-2.5 pt-1">
           <button type="submit"
-            class="bg-nit-blue hover:bg-nit-blue-dark text-white px-5 py-2 rounded-lg text-sm font-medium transition">
+            class="bg-nit-blue hover:bg-nit-blue-dark text-white px-4 py-2 rounded-lg text-xs font-semibold transition">
             Salvar
           </button>
           <button type="button" onclick="closeModal('edit')"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition">
+            class="px-4 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition">
             Cancelar
           </button>
         </div>
@@ -333,23 +333,23 @@
   <!-- ── MODAL: Rejeitar ────────────────────────────────── -->
   <div id="modal-reject" class="modal-wrap" onclick="closeModal('reject')">
     <div class="modal-box" onclick="event.stopPropagation()">
-      <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4">
-        <i class="fas fa-trash text-red-500"></i>
+      <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-3">
+        <i class="fas fa-trash text-red-500 text-sm"></i>
       </div>
-      <h3 class="text-base font-semibold text-gray-800 mb-1">Rejeitar Cadastro</h3>
-      <p class="text-sm text-gray-500 mb-1">
+      <h3 class="text-sm font-semibold text-gray-800 mb-1">Rejeitar Cadastro</h3>
+      <p class="text-xs text-gray-500 mb-1">
         Deseja rejeitar o cadastro de <strong id="reject-nome"></strong>?
       </p>
-      <p class="text-xs text-red-500 mb-5">Esta ação é permanente e não pode ser desfeita.</p>
-      <div id="msg-reject" class="hidden text-sm rounded-lg px-3 py-2 mb-4"></div>
-      <div class="flex gap-3">
+      <p class="text-xs text-red-500 mb-4">Esta ação é permanente e não pode ser desfeita.</p>
+      <div id="msg-reject" class="hidden text-xs rounded-lg px-3 py-2 mb-3"></div>
+      <div class="flex gap-2.5">
         <button onclick="confirmReject()"
-          class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white
-                 px-5 py-2 rounded-lg text-sm font-medium transition">
-          <i class="fas fa-trash text-xs"></i> Rejeitar
+          class="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white
+                 px-4 py-2 rounded-lg text-xs font-semibold transition">
+          <i class="fas fa-trash"></i> Rejeitar
         </button>
         <button onclick="closeModal('reject')"
-          class="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition">
+          class="px-4 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition">
           Cancelar
         </button>
       </div>
@@ -362,7 +362,7 @@
     if (!currentUser) { window.location.href = '/login.html'; }
     else if (!currentUser.adm) { window.location.href = '/bem-vindo.html'; }
 
-    document.getElementById('sidebar-name').textContent = currentUser?.nome || 'Admin';
+    document.getElementById('header-name').textContent = currentUser?.nome || 'Admin';
 
     function logout() {
       localStorage.removeItem('nit_user');
@@ -427,14 +427,14 @@
         const id = isAdv ? (u.oab || '-') : (u.usuario || '-');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-5 py-3.5 font-medium text-gray-800">${esc(u.nome)}</td>
-          <td class="px-5 py-3.5">
+          <td class="px-5 py-3 font-medium text-gray-800 text-sm">${esc(u.nome)}</td>
+          <td class="px-5 py-3">
             <span class="badge ${isAdv ? 'badge-adv' : 'badge-col'}">${isAdv ? 'Advogado' : 'Colaborador'}</span>
           </td>
-          <td class="px-5 py-3.5 text-gray-500">${esc(u.email)}</td>
-          <td class="px-5 py-3.5 text-gray-500">${esc(id)}</td>
-          <td class="px-5 py-3.5 text-gray-400 text-xs">${fmtDate(u.criado_em)}</td>
-          <td class="px-5 py-3.5">
+          <td class="px-5 py-3 text-gray-500 text-sm">${esc(u.email)}</td>
+          <td class="px-5 py-3 text-gray-500 text-sm">${esc(id)}</td>
+          <td class="px-5 py-3 text-gray-400 text-xs">${fmtDate(u.criado_em)}</td>
+          <td class="px-5 py-3">
             <div class="flex items-center justify-end gap-1.5">
               <button onclick="openApprove(${u.id})"
                 class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium
@@ -472,20 +472,18 @@
 
     // ── Modals ────────────────────────────────────────────
     function openModal(name) {
-      const el = document.getElementById(`modal-${name}`);
-      requestAnimationFrame(() => el.classList.add('open'));
+      requestAnimationFrame(() => document.getElementById(`modal-${name}`).classList.add('open'));
     }
 
     function closeModal(name) {
-      const el = document.getElementById(`modal-${name}`);
-      el.classList.remove('open');
+      document.getElementById(`modal-${name}`).classList.remove('open');
       hideMsg(`msg-${name}`);
     }
 
     function showMsg(id, text, type) {
       const el = document.getElementById(id);
       el.textContent = text;
-      el.className = `text-sm rounded-lg px-3 py-2 ${
+      el.className = `text-xs rounded-lg px-3 py-2 ${
         type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
       }`;
       el.classList.remove('hidden');
