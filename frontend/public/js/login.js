@@ -292,8 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const result = await postJSON('/api/auth/login', loginPayload);
-      if (result.error) showMsg('msg-login', result.error, 'error');
-      else showMsg('msg-login', 'Login realizado com sucesso!', 'success');
+      if (result.error) {
+        showMsg('msg-login', result.error, 'error');
+      } else {
+        localStorage.setItem('nit_user', JSON.stringify(result.usuario));
+        window.location.href = result.usuario.adm ? '/admin.html' : '/bem-vindo.html';
+      }
     } catch {
       showMsg('msg-login', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
@@ -326,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const result = await postJSON('/api/auth/register', payload);
       if (result.error) showMsg('msg-register', result.error, 'error');
-      else showMsg('msg-register', 'Conta criada! Fa\u00E7a login para continuar.', 'success');
+      else showMsg('msg-register', 'Cadastro enviado! Aguarde a aprova\u00E7\u00E3o do administrador.', 'success');
     } catch {
       showMsg('msg-register', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {

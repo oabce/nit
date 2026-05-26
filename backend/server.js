@@ -41,6 +41,7 @@ fs.watch(PUBLIC, { recursive: true }, (_, filename) => {
 });
 
 const { login, register, forgotPassword, resetPassword } = require('./api/auth');
+const { listPending, approveUser, rejectUser, editUser, createUser } = require('./api/admin');
 
 const server = http.createServer((req, res) => {
   // ── API ──────────────────────────────────────────────────────
@@ -48,6 +49,12 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/auth/register'        && req.method === 'POST') return register(req, res);
   if (req.url === '/api/auth/forgot-password' && req.method === 'POST') return forgotPassword(req, res);
   if (req.url === '/api/auth/reset-password'  && req.method === 'POST') return resetPassword(req, res);
+
+  if (req.url.startsWith('/api/admin/pending') && req.method === 'GET')  return listPending(req, res);
+  if (req.url === '/api/admin/approve'         && req.method === 'POST') return approveUser(req, res);
+  if (req.url === '/api/admin/reject'          && req.method === 'POST') return rejectUser(req, res);
+  if (req.url === '/api/admin/edit'            && req.method === 'POST') return editUser(req, res);
+  if (req.url === '/api/admin/create'          && req.method === 'POST') return createUser(req, res);
 
   if (req.url.startsWith('/api/')) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
