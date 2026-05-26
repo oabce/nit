@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Administrativo - Solicitacoes de Acesso</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "nit-ink": "#12304d",
+            "nit-ink-soft": "#284a6a",
+            "nit-red": "#b51f2e",
+            "nit-gold": "#c79a3b",
+          },
+          fontFamily: {
+            sans: ["Manrope", "sans-serif"],
+          },
+          boxShadow: {
+            card: "0 20px 45px rgba(18, 48, 77, 0.12)",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(199, 154, 59, 0.16), transparent 22rem),
+        radial-gradient(circle at top right, rgba(181, 31, 46, 0.12), transparent 20rem),
+        linear-gradient(180deg, #f8f5ef 0%, #eef3f8 100%);
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(16px);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-radius: 9999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 font-sans">
+  <div class="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+    <header class="mb-6 flex flex-col gap-5 rounded-[2rem] border border-white/60 bg-[#f5f5f5] px-6 py-6 text-white shadow-card lg:flex-row lg:items-center">
+      <div class="flex items-center gap-5">
+        <img
+          src="assets/imgs/Logo1.1.png"
+          alt="NIT"
+          class="w-[220px] max-w-full object-contain sm:w-[300px] lg:w-[380px]"
+        />
+        <div>
+          <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-black sm:text-3xl ">Solicitacões de Acesso</h1>
+          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-black/75">
+            Revise pedidos pendentes, acompanhe usuarios ativos e desative cadastros quando necessario.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <section class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <article class="glass rounded-[1.75rem] border border-white/60 p-5 shadow-card">
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">Pendentes</p>
+        <div class="mt-4 flex items-end justify-between">
+          <strong id="summary-pending" class="text-4xl font-extrabold text-nit-ink">0</strong>
+          <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">Aguardando revisao</span>
+        </div>
+      </article>
+
+      <article class="glass rounded-[1.75rem] border border-white/60 p-5 shadow-card">
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">Usuarios Ativos</p>
+        <div class="mt-4 flex items-end justify-between">
+          <strong id="summary-approved" class="text-4xl font-extrabold text-nit-ink">0</strong>
+          <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Acessos liberados</span>
+        </div>
+      </article>
+
+      <article class="glass rounded-[1.75rem] border border-white/60 p-5 shadow-card">
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">Recusados</p>
+        <div class="mt-4 flex items-end justify-between">
+          <strong id="summary-rejected" class="text-4xl font-extrabold text-nit-ink">0</strong>
+          <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">Solicitacoes negadas</span>
+        </div>
+      </article>
+
+      <article class="glass rounded-[1.75rem] border border-white/60 p-5 shadow-card">
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">Desativados</p>
+        <div class="mt-4 flex items-end justify-between">
+          <strong id="summary-disabled" class="text-4xl font-extrabold text-nit-ink">0</strong>
+          <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">Cadastros bloqueados</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="glass flex-1 rounded-[2rem] border border-white/60 p-4 shadow-card sm:p-6">
+      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 class="text-xl font-extrabold tracking-tight text-nit-ink">Painel de revisao</h2>
+          <p class="mt-1 text-sm text-slate-500">Use a busca para localizar rapidamente solicitacoes pendentes ou usuarios ativos.</p>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label class="relative block">
+            <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <input
+              id="filter-input"
+              type="search"
+              placeholder="Buscar por nome, e-mail, OAB ou usuario"
+              class="w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm outline-none transition focus:border-nit-ink focus:ring-4 focus:ring-slate-200 sm:w-80"
+            />
+          </label>
+          <button
+            id="btn-refresh"
+            type="button"
+            class="rounded-2xl bg-nit-ink px-5 py-3 text-sm font-bold text-white transition hover:bg-nit-ink-soft"
+          >
+            <i class="fa-solid fa-rotate-right mr-2"></i>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <div id="feedback" class="mb-4 hidden rounded-2xl px-4 py-3 text-sm font-semibold"></div>
+
+      <div id="loading-state" class="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/60 px-6 py-8 text-center text-sm text-slate-500">
+        Carregando painel administrativo...
+      </div>
+
+      <div class="space-y-6" id="content-sections">
+        <section>
+          <div class="mb-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-extrabold text-nit-ink">Solicitacoes pendentes</h3>
+              <p class="text-sm text-slate-500">Cadastros aguardando aprovacao manual.</p>
+            </div>
+          </div>
+
+          <div id="pending-empty" class="hidden rounded-[1.5rem] border border-dashed border-amber-200 bg-amber-50/80 px-6 py-10 text-center">
+            <h4 class="text-lg font-extrabold text-amber-900">Nenhuma solicitacao pendente</h4>
+            <p class="mt-2 text-sm text-amber-800/80">Quando novos cadastros chegarem, eles aparecerao aqui.</p>
+          </div>
+
+          <div id="pending-table-wrapper" class="hidden overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+            <div class="hidden grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr_auto] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400 lg:grid">
+              <span>Solicitante</span>
+              <span>Perfil</span>
+              <span>Documento</span>
+              <span>Usuario</span>
+              <span>Enviado em</span>
+              <span class="text-right">Acoes</span>
+            </div>
+
+            <div id="pending-request-list" class="divide-y divide-slate-200"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="mb-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-extrabold text-nit-ink">Usuarios ativos</h3>
+              <p class="text-sm text-slate-500">Cadastros aprovados com acesso liberado ao sistema.</p>
+            </div>
+          </div>
+
+          <div id="active-empty" class="hidden rounded-[1.5rem] border border-dashed border-sky-200 bg-sky-50/80 px-6 py-10 text-center">
+            <h4 class="text-lg font-extrabold text-sky-900">Nenhum usuario ativo encontrado</h4>
+            <p class="mt-2 text-sm text-sky-800/80">Usuarios aprovados aparecerao aqui para eventual desativacao.</p>
+          </div>
+
+          <div id="active-table-wrapper" class="hidden overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+            <div class="hidden grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr_auto] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400 lg:grid">
+              <span>Usuario</span>
+              <span>Perfil</span>
+              <span>Documento</span>
+              <span>Login</span>
+              <span>Atualizado em</span>
+              <span class="text-right">Acoes</span>
+            </div>
+
+            <div id="active-user-list" class="divide-y divide-slate-200"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/admin-solicitacoes.js"></script>
+</body>
+</html>
