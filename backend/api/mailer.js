@@ -110,9 +110,9 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     console.log('[mailer] EHLO após STARTTLS:', ehlo2.lines);
   }
 
-  console.log('[mailer] Tentando AUTH PLAIN para usuario:', user);
-  console.log('[mailer] Senha — tamanho:', pass.length, '| hex:', Buffer.from(pass).toString('hex'));
   const plainCreds = b64('\0' + user + '\0' + pass);
+  console.log('[mailer] base64 gerado:', plainCreds);
+  console.log('[mailer] esperado:      AHNtdHBfZ2xwaUBvYWJjZS5vcmcuYnIANGh9RSpVYlZhbXA7Q0VjcFhh');
   c.write(`AUTH PLAIN ${plainCreds}`);
   const authResp = await c.read();
   console.log('[mailer] AUTH PLAIN resp:', authResp.line);
