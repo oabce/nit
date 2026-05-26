@@ -40,21 +40,50 @@ fs.watch(PUBLIC, { recursive: true }, (_, filename) => {
   broadcast();
 });
 
-const { login, register, forgotPassword, resetPassword } = require('./api/auth');
-const { listPending, approveUser, rejectUser, editUser, createUser } = require('./api/admin');
+const {
+  login,
+  register,
+  forgotPassword,
+  listAccessRequests,
+  approveAccessRequest,
+  rejectAccessRequest,
+  deactivateUserAccount,
+} = require('./api/auth');
 
 const server = http.createServer((req, res) => {
-  // ── API ──────────────────────────────────────────────────────
-  if (req.url === '/api/auth/login'           && req.method === 'POST') return login(req, res);
-  if (req.url === '/api/auth/register'        && req.method === 'POST') return register(req, res);
-  if (req.url === '/api/auth/forgot-password' && req.method === 'POST') return forgotPassword(req, res);
-  if (req.url === '/api/auth/reset-password'  && req.method === 'POST') return resetPassword(req, res);
+  const isApiRequest = req.url.startsWith('/api/');
 
-  if (req.url.startsWith('/api/admin/pending') && req.method === 'GET')  return listPending(req, res);
-  if (req.url === '/api/admin/approve'         && req.method === 'POST') return approveUser(req, res);
-  if (req.url === '/api/admin/reject'          && req.method === 'POST') return rejectUser(req, res);
-  if (req.url === '/api/admin/edit'            && req.method === 'POST') return editUser(req, res);
-  if (req.url === '/api/admin/create'          && req.method === 'POST') return createUser(req, res);
+  if (isApiRequest) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
+
+  if (req.method === 'OPTIONS' && isApiRequest) {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  // ── API ──────────────────────────────────────────────────────
+  if (req.url === '/api/auth/login' && req.method === 'POST') return login(req, res);
+  if (req.url === '/api/auth/register' && req.method === 'POST') return register(req, res);
+  if (req.url === '/api/auth/forgot-password' && req.method === 'POST') return forgotPassword(req, res);
+  if (req.url === '/api/admin/access-requests' && req.method === 'GET') return listAccessRequests(req, res);
+
+  const approveMatch = req.url.match(/^\/api\/admin\/access-requests\/(\d+)\/approve$/);
+  if (approveMatch && req.method === 'POST') {
+    return approveAccessRequest(req, res, Number.parseInt(approveMatch[1], 10));
+  }
+
+  const rejectMatch = req.url.match(/^\/api\/admin\/access-requests\/(\d+)\/reject$/);
+  if (rejectMatch && req.method === 'POST') {
+    return rejectAccessRequest(req, res, Number.parseInt(rejectMatch[1], 10));
+  }
+
+  const deactivateMatch = req.url.match(/^\/api\/admin\/access-requests\/(\d+)\/deactivate$/);
+  if (deactivateMatch && req.method === 'POST') {
+    return deactivateUserAccount(req, res, Number.parseInt(deactivateMatch[1], 10));
+  }
 
   if (req.url.startsWith('/api/')) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
