@@ -111,6 +111,7 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
   }
 
   console.log('[mailer] Tentando AUTH PLAIN para usuario:', user);
+  console.log('[mailer] Senha lida do .env — tamanho:', pass.length, '| conteúdo:', pass);
   const plainCreds = b64('\0' + user + '\0' + pass);
   c.write(`AUTH PLAIN ${plainCreds}`);
   const authResp = await c.read();
