@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login – NIT / OAB-CE</title>
+  <title>Login - NIT / OAB-CE</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,88 +17,132 @@
       theme: {
         extend: {
           colors: {
-            'nit-blue':      '#1b365d',
-            'nit-blue-dark': '#142846',
-            'nit-red':       '#be1622',
-            'nit-red-dark':  '#9c121c',
+            "nit-blue": "#1b365d",
+            "nit-blue-dark": "#142846",
+            "nit-red": "#be1622",
+            "nit-red-dark": "#9c121c",
           },
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          fontFamily: { sans: ["Inter", "sans-serif"] },
           backgroundImage: {
-            'footer-gradient': 'linear-gradient(90deg, #981924 0%, #362942 50%, #1b365d 100%)',
+            "footer-gradient": "linear-gradient(90deg, #981924 0%, #362942 50%, #1b365d 100%)",
           },
           keyframes: {
             fadeInDown: {
-              '0%':   { opacity: '0', transform: 'translateY(-16px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
+              "0%": { opacity: "0", transform: "translateY(-16px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" },
             },
             fadeInUp: {
-              '0%':   { opacity: '0', transform: 'translateY(16px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
+              "0%": { opacity: "0", transform: "translateY(16px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" },
             },
           },
           animation: {
-            'fade-in-down':     'fadeInDown 0.5s ease both',
-            'fade-in-up':       'fadeInUp 0.5s ease both',
-            'fade-in-up-delay': 'fadeInUp 0.5s ease 0.15s both',
+            "fade-in-down": "fadeInDown 0.5s ease both",
+            "fade-in-up": "fadeInUp 0.5s ease both",
+            "fade-in-up-delay": "fadeInUp 0.5s ease 0.15s both",
           },
-        }
-      }
-    }
+        },
+      },
+    };
   </script>
 
   <style>
     :root {
       --welcome-w: 360px;
-      --form-w:    320px;
+      --form-w: 320px;
     }
-    @media (min-width: 640px)  { :root { --welcome-w: 420px; --form-w: 360px; } }
-    @media (min-width: 1024px) { :root { --welcome-w: 500px; --form-w: 420px; } }
 
-    /* Overlay de brilho nos botões de perfil */
+    @media (min-width: 640px) {
+      :root {
+        --welcome-w: 420px;
+        --form-w: 360px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      :root {
+        --welcome-w: 500px;
+        --form-w: 420px;
+      }
+    }
+
     .profile-btn::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0));
-      opacity: 0; transition: opacity 0.2s ease; border-radius: inherit;
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      border-radius: inherit;
     }
-    .profile-btn:hover::after { opacity: 1; }
 
-    /* Card principal — largura gerenciada pelo GSAP */
+    .profile-btn:hover::after {
+      opacity: 1;
+    }
+
     #card {
       display: flex;
       overflow: hidden;
-      width: var(--welcome-w);
+      width: min(100%, var(--welcome-w));
+      max-width: 100%;
+      flex-direction: column;
     }
 
-    /* Painel de boas-vindas — largura fixa */
+    @media (min-width: 768px) {
+      #card {
+        width: var(--welcome-w);
+        flex-direction: row;
+      }
+    }
+
     #panel-welcome {
-      flex-shrink: 0;
-      width: var(--welcome-w);
-      min-height: 300px;
+      width: 100%;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
       text-align: center;
+      gap: 1.75rem;
     }
-    @media (min-width: 640px)  { #panel-welcome { min-height: 320px; } }
-    @media (min-width: 1024px) { #panel-welcome { min-height: 360px; } }
 
-    /* Área do formulário — slide gerenciado pelo GSAP */
+    @media (min-width: 768px) {
+      #panel-welcome {
+        flex-shrink: 0;
+        width: var(--welcome-w);
+        min-height: 320px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      #panel-welcome {
+        min-height: 360px;
+      }
+    }
+
     #form-area {
-      flex-shrink: 0;
-      width: var(--form-w);
-      display: flex;
+      width: 100%;
+      display: none;
       flex-direction: column;
       justify-content: center;
       opacity: 0;
+      border-top: 1px solid #e2e8f0;
     }
 
-    /* Colaborador: card expande para a esquerda */
-    #card.expand-left {
-      flex-direction: row-reverse;
+    @media (min-width: 768px) {
+      #form-area {
+        flex-shrink: 0;
+        width: var(--form-w);
+        border-top: 0;
+      }
     }
 
-    /* Inputs */
+    @media (min-width: 768px) {
+      #card.expand-left {
+        flex-direction: row-reverse;
+      }
+    }
+
     .field {
       width: 100%;
       border: 1px solid #e2e8f0;
@@ -107,34 +151,53 @@
       font-size: 0.8125rem;
       color: #1e293b;
       outline: none;
-      transition: border-color .15s, box-shadow .15s;
-      font-family: 'Inter', sans-serif;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: "Inter", sans-serif;
     }
-    .field::placeholder { color: #94a3b8; }
-    .field:focus      { border-color: #1b365d; box-shadow: 0 0 0 3px rgba(27,54,93,.10); }
-    .field-red:focus  { border-color: #be1622; box-shadow: 0 0 0 3px rgba(190,22,34,.10); }
 
-    /* Mensagem feedback */
-    .msg { display: none; font-size: .75rem; padding: .5rem .75rem; border-radius: .5rem; margin-bottom: .75rem; }
-    .msg.error   { display: block; background: #fef2f2; color: #b91c1c; }
-    .msg.success { display: block; background: #f0fdf4; color: #15803d; }
+    .field::placeholder {
+      color: #94a3b8;
+    }
+
+    .field:focus {
+      border-color: #1b365d;
+      box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.1);
+    }
+
+    .field-red:focus {
+      border-color: #be1622;
+      box-shadow: 0 0 0 3px rgba(190, 22, 34, 0.1);
+    }
+
+    .msg {
+      display: none;
+      font-size: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .msg.error {
+      display: block;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .msg.success {
+      display: block;
+      background: #f0fdf4;
+      color: #15803d;
+    }
   </style>
 </head>
-<body class="h-screen flex flex-col bg-[#f5f5f5] font-sans overflow-hidden">
-
-  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
+<body class="min-h-screen flex flex-col bg-[#f5f5f5] font-sans overflow-x-hidden">
   <header class="shrink-0 px-4 sm:px-6 lg:px-8 py-2 bg-white flex items-center z-10 animate-fade-in-down">
-    <img src="/assets/imgs/Logo1.1.png" alt="NIT"
-         class="h-12 sm:h-12 lg:h-14 xl:h-24 object-contain" />
+    <img src="/assets/imgs/Logo1.1.png" alt="NIT" class="h-12 sm:h-12 lg:h-14 xl:h-24 object-contain" />
   </header>
 
-  <!-- ══ MAIN ════════════════════════════════════════════════════ -->
-  <main class="flex-1 min-h-0 flex items-center justify-center px-4 animate-fade-in-up">
-
+  <main class="flex-1 flex items-start sm:items-center justify-center px-4 py-4 sm:py-6 lg:py-8 animate-fade-in-up">
     <div id="card" class="bg-white rounded-2xl shadow-sm border">
-
-      <!-- ── Painel Bem-vindo ──────────────────────────────────── -->
-      <div id="panel-welcome" class="px-7 py-8 sm:px-9">
+      <div id="panel-welcome" class="px-5 py-6 sm:px-7 sm:py-8 lg:px-9">
         <div>
           <h1 class="font-bold text-nit-blue tracking-tight mb-1.5 text-xl sm:text-2xl">
             Bem-vindo
@@ -143,7 +206,8 @@
             Selecione seu perfil de acesso
           </p>
         </div>
-        <div class="flex gap-5 sm:gap-24">
+
+        <div class="flex w-full flex-wrap justify-center gap-4 sm:gap-8 lg:gap-24">
           <a id="btn-colaborador" href="#"
              class="profile-btn group relative flex flex-col items-center
                     bg-nit-blue text-white rounded-2xl font-semibold cursor-pointer
@@ -152,12 +216,12 @@
                     hover:bg-nit-blue-dark hover:-translate-y-2
                     hover:shadow-[0_15px_30px_rgba(27,54,93,.3)]
                     active:translate-y-0
-                    w-24 py-5 gap-2.5 text-xs sm:w-28 sm:py-6 sm:text-sm lg:w-40 lg:py-14">
+                    w-full max-w-[8.5rem] py-4 gap-2 text-xs sm:w-28 sm:max-w-none sm:py-6 sm:text-sm lg:w-40 lg:py-14">
             <img src="/assets/imgs/funcionarios.png" alt="Colaborador"
-                 class="h-9 sm:h-11 lg:h-12 w-auto object-contain
-                        transition-transform duration-200 group-hover:scale-110" />
+                 class="h-9 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-110" />
             Colaborador
           </a>
+
           <a id="btn-advogado" href="#"
              class="profile-btn group relative flex flex-col items-center
                     bg-nit-red text-white rounded-2xl font-semibold cursor-pointer
@@ -166,35 +230,29 @@
                     hover:bg-nit-red-dark hover:-translate-y-2
                     hover:shadow-[0_15px_30px_rgba(190,22,34,.3)]
                     active:translate-y-0
-                    w-24 py-5 gap-2.5 text-xs sm:w-28 sm:py-6 sm:text-sm lg:w-40 lg:py-14">
+                    w-full max-w-[8.5rem] py-4 gap-2 text-xs sm:w-28 sm:max-w-none sm:py-6 sm:text-sm lg:w-40 lg:py-14">
             <img src="/assets/imgs/advogado.png" alt="Advogado"
-                 class="h-9 sm:h-11 lg:h-12 w-auto object-contain
-                        transition-transform duration-200 group-hover:scale-110" />
+                 class="h-9 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-110" />
             Advogado
           </a>
         </div>
       </div>
-      <!-- ── fim Painel Bem-vindo ──────────────────────────────── -->
 
-      <!-- ── Área do formulário (expande à direita) ────────────── -->
-      <div id="form-area" class="px-6 py-8">
-
-        <!-- Cabeçalho do formulário (muda conforme o perfil) -->
+      <div id="form-area" class="px-5 py-6 sm:px-6 sm:py-8">
         <div class="flex items-center justify-between mb-5">
           <div class="flex items-center gap-3">
             <img id="form-icon" src="" alt="" class="h-9 w-auto object-contain" />
             <div>
               <h2 id="form-title" class="text-sm font-bold text-nit-blue leading-tight"></h2>
-              <p id="form-sub"   class="text-[11px] text-slate-400"></p>
+              <p id="form-sub" class="text-[11px] text-slate-400"></p>
             </div>
           </div>
-          <button id="btn-back"
-                  class="text-slate-300 hover:text-slate-500 transition-colors ml-2 shrink-0">
+
+          <button id="btn-back" class="text-slate-300 hover:text-slate-500 transition-colors ml-2 shrink-0">
             <i class="fas fa-times text-base"></i>
           </button>
         </div>
 
-        <!-- ── Formulário Login ──────────────────────────────── -->
         <form id="form-login" class="space-y-2.5" novalidate>
           <div class="msg" id="msg-login"></div>
           <input class="field" id="login-identifier" type="text" name="" placeholder="" required />
@@ -202,41 +260,30 @@
           <div class="text-right">
             <a href="#" id="link-esqueci" class="text-[11px] hover:underline">Esqueci minha senha</a>
           </div>
-          <!-- Criar conta: sem fundo, mesma largura do botão Entrar -->
           <button type="button" id="btn-show-register"
-                  class="w-full py-2.5 rounded-xl text-sm font-semibold
-                         transition-all duration-50
-                         hover:shadow-sm active:translate-y-0
-                         flex items-center justify-center">
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-50 hover:shadow-sm active:translate-y-0 flex items-center justify-center">
             Criar conta
           </button>
           <button type="submit" id="btn-login-submit"
-                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white
-                         transition-all duration-50
-                         hover:shadow-lg active:translate-y-0
-                         flex items-center justify-center gap-2">
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-50 hover:shadow-lg active:translate-y-0 flex items-center justify-center gap-2">
             <span>Entrar</span>
             <i class="fas fa-spinner fa-spin hidden btn-spinner"></i>
           </button>
         </form>
 
-        <!-- ── Formulário Cadastro ───────────────────────────── -->
         <form id="form-register" class="space-y-2.5 hidden" novalidate>
           <div class="msg" id="msg-register"></div>
-          <input class="field" id="reg-nome"  type="text"  name="nome"  placeholder="Nome completo" required />
-          <input class="field" id="reg-oab"   type="text"  name="oab"   placeholder="Número OAB" />
-          <input class="field" id="reg-cpf"     type="text"  name="cpf"     placeholder="CPF"     required />
-          <input class="field" id="reg-email"   type="email" name="email"   placeholder="E-mail"    required />
-          <input class="field" id="reg-usuario" type="text"  name="usuario" placeholder="Usuário"   />
-          <div class="flex gap-2">
-            <input class="field" id="reg-senha"     type="password" name="senha"     placeholder="Senha"           required />
+          <input class="field" id="reg-nome" type="text" name="nome" placeholder="Nome completo" required />
+          <input class="field" id="reg-oab" type="text" name="oab" placeholder="Número OAB" />
+          <input class="field" id="reg-cpf" type="text" name="cpf" placeholder="CPF" required />
+          <input class="field" id="reg-email" type="email" name="email" placeholder="E-mail" required />
+          <input class="field" id="reg-usuario" type="text" name="usuario" placeholder="Usuário" />
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input class="field" id="reg-senha" type="password" name="senha" placeholder="Senha" required />
             <input class="field" id="reg-confirmar" type="password" name="confirmar" placeholder="Confirmar senha" required />
           </div>
           <button type="submit" id="btn-register-submit"
-                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white
-                         transition-all duration-150 hover:-translate-y-0.5
-                         hover:shadow-lg active:translate-y-0
-                         flex items-center justify-center gap-2">
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 flex items-center justify-center gap-2">
             <span>Criar conta</span>
             <i class="fas fa-spinner fa-spin hidden btn-spinner"></i>
           </button>
@@ -246,72 +293,68 @@
           </button>
         </form>
 
+        <form id="form-recover" class="space-y-3 hidden" novalidate>
+          <div class="msg" id="msg-recover"></div>
+          <p class="text-[11px] leading-relaxed text-slate-500">
+            Informe seu e-mail de acesso para receber as instruções de recuperação de senha.
+          </p>
+          <input class="field" id="recover-email" type="email" name="email" placeholder="E-mail" required />
+          <button type="submit" id="btn-recover-submit"
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 flex items-center justify-center gap-2">
+            <span>Recuperar senha</span>
+            <i class="fas fa-spinner fa-spin hidden btn-spinner"></i>
+          </button>
+          <button type="button" id="btn-show-login-from-recover"
+                  class="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors pt-0.5">
+            Voltar para o login
+          </button>
+        </form>
       </div>
-      <!-- ── fim Área do formulário ────────────────────────────── -->
-
-    </div><!-- /card -->
-
+    </div>
   </main>
 
-  <!-- ══ FOOTER ══════════════════════════════════════════════════ -->
-  <footer class="shrink-0 bg-footer-gradient text-white z-10 animate-fade-in-up-delay
-                 px-4 py-3 sm:px-6 sm:py-3.5 lg:px-10 lg:py-6">
-    <div class="flex items-center justify-between flex-wrap gap-4 sm:gap-5 lg:gap-6
-                max-w-screen-xl mx-auto w-full">
-
+  <footer class="shrink-0 bg-footer-gradient text-white z-10 animate-fade-in-up-delay px-4 py-3 sm:px-6 sm:py-3.5 lg:px-10 lg:py-6">
+    <div class="flex items-center justify-between gap-4 text-left sm:flex-row sm:flex-wrap sm:justify-between sm:gap-5 lg:gap-6 max-w-screen-xl mx-auto w-full">
       <img src="/assets/imgs/img5.png" alt="OAB Ceará"
-           class="h-6 sm:h-9 lg:h-9 object-contain transition-transform duration-200 hover:scale-105" />
+           class="hidden sm:block h-6 sm:h-9 lg:h-9 object-contain transition-transform duration-200 hover:scale-105" />
 
       <div class="w-px h-9 bg-white/20 hidden sm:block"></div>
 
-      <div class="text-[10px] leading-relaxed text-white uppercase tracking-wide">
-        Fortalecendo a Advocacia.<br />Defendendo a Cidadania.
-      </div>
-
-      <div class="hidden md:flex items-center gap-2.5 text-[10px] leading-relaxed text-white/80">
-        <img class="h-10" src="assets/imgs/Logo3.1.png" alt="logo nit" style="filter: brightness(0) invert(1);">
+      <div class="flex min-w-0 flex-1 items-center gap-2.5 text-[9px] leading-relaxed text-white/90 sm:flex-none sm:text-[13px]">
+        <img class="h-8 sm:h-9 w-auto object-contain" src="assets/imgs/Logo3.1.png" alt="Logo NIT" style="filter: brightness(0) invert(1);" />
         <span>Desenvolvido por<br /><strong class="text-white font-semibold">Núcleo de Inovação e Tecnologia</strong></span>
       </div>
 
       <div class="w-px h-9 bg-white/20 hidden sm:block"></div>
 
-      <p class="text-[10px] text-white/60 whitespace-nowrap hidden lg:block leading-relaxed">
-        © 2026 NIT – OAB/CE<br />Todos os direitos reservados.
+      <p class="text-[11px] text-white/60 whitespace-nowrap hidden lg:block leading-relaxed">
+        © 2026 NIT - OAB/CE<br />Todos os direitos reservados.
       </p>
 
       <div class="flex flex-col items-end gap-1.5">
         <div class="flex gap-1.5 sm:gap-2">
           <a href="https://www.facebook.com/oabce/" target="_blank" rel="noopener"
-             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center
-                    text-white text-xs transition-all duration-200
-                    hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
+             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center text-white text-xs transition-all duration-200 hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
             <i class="fab fa-facebook-f"></i>
           </a>
           <a href="https://www.instagram.com/oabce/" target="_blank" rel="noopener"
-             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center
-                    text-white text-xs transition-all duration-200
-                    hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
+             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center text-white text-xs transition-all duration-200 hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
             <i class="fab fa-instagram"></i>
           </a>
           <a href="https://www.youtube.com/oabcearaoficial" target="_blank" rel="noopener"
-             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center
-                    text-white text-xs transition-all duration-200
-                    hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
+             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center text-white text-xs transition-all duration-200 hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
             <i class="fab fa-youtube"></i>
           </a>
           <a href="https://br.linkedin.com/company/oabce" target="_blank" rel="noopener"
-             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center
-                    text-white text-xs transition-all duration-200
-                    hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
+             class="w-7 h-7 rounded-full border border-white/40 flex items-center justify-center text-white text-xs transition-all duration-200 hover:bg-white/20 hover:border-white hover:-translate-y-0.5">
             <i class="fab fa-linkedin-in"></i>
           </a>
         </div>
         <a href="https://oabce.org.br" target="_blank" rel="noopener"
-           class="text-[10px] text-white/70 hover:text-white hover:underline transition-colors">
+           class="text-[11px] text-white/70 hover:text-white hover:underline transition-colors">
           oabce.org.br
         </a>
       </div>
-
     </div>
   </footer>
 

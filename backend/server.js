@@ -40,12 +40,13 @@ fs.watch(PUBLIC, { recursive: true }, (_, filename) => {
   broadcast();
 });
 
-const { login, register } = require('./api/auth');
+const { login, register, forgotPassword } = require('./api/auth');
 
 const server = http.createServer((req, res) => {
   // ── API ──────────────────────────────────────────────────────
   if (req.url === '/api/auth/login'    && req.method === 'POST') return login(req, res);
   if (req.url === '/api/auth/register' && req.method === 'POST') return register(req, res);
+  if (req.url === '/api/auth/forgot-password' && req.method === 'POST') return forgotPassword(req, res);
 
   if (req.url.startsWith('/api/')) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
