@@ -108,35 +108,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filtered.forEach((request) => {
       const item = document.createElement('article');
-      item.className = 'grid gap-4 px-5 py-5 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr_auto] lg:items-center';
+      item.className = 'grid gap-4 px-5 py-5 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr_auto] lg:items-start';
 
       item.innerHTML = `
-        <div>
+        <div class="lg:min-h-[56px]">
           <p class="text-base font-extrabold text-nit-ink">${request.nome}</p>
           <p class="mt-1 text-sm text-slate-500">${request.email}</p>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:items-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Perfil</p>
           <div class="mt-1 lg:mt-0">${getProfileBadge(request.perfil)}</div>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:flex-col lg:justify-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Documento</p>
           <p class="mt-1 text-sm font-semibold text-slate-700">${getDocumentLabel(request)}</p>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:flex-col lg:justify-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Usuario</p>
           <p class="mt-1 text-sm font-semibold text-slate-700">${request.usuario || request.email}</p>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:flex-col lg:justify-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Enviado em</p>
           <p class="mt-1 text-sm text-slate-600">${formatDate(request.criadoEm)}</p>
         </div>
 
-        <div class="flex flex-col gap-2 sm:flex-row lg:justify-end">
+        <div class="flex flex-col gap-2 sm:flex-row lg:min-h-[56px] lg:items-start lg:justify-end">
           <button
             type="button"
             class="btn-approve rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
@@ -182,35 +182,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filtered.forEach((user) => {
       const item = document.createElement('article');
-      item.className = 'grid gap-4 px-5 py-5 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr_auto] lg:items-center';
+      item.className = 'grid gap-4 px-5 py-5 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr_auto] lg:items-start';
 
       item.innerHTML = `
-        <div>
+        <div class="lg:min-h-[56px]">
           <p class="text-base font-extrabold text-nit-ink">${user.nome}</p>
           <p class="mt-1 text-sm text-slate-500">${user.email}</p>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:items-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Perfil</p>
           <div class="mt-1 lg:mt-0">${getProfileBadge(user.perfil)}</div>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:flex-col lg:justify-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Documento</p>
           <p class="mt-1 text-sm font-semibold text-slate-700">${getDocumentLabel(user)}</p>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:flex-col lg:justify-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Login</p>
           <p class="mt-1 text-sm font-semibold text-slate-700">${user.usuario || user.email}</p>
         </div>
 
-        <div>
+        <div class="lg:min-h-[56px] lg:flex lg:flex-col lg:justify-start">
           <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Atualizado em</p>
           <p class="mt-1 text-sm text-slate-600">${formatDate(user.atualizadoEm)}</p>
         </div>
 
-        <div class="flex flex-col gap-2 sm:flex-row lg:justify-end">
+        <div class="flex flex-col gap-2 sm:flex-row lg:min-h-[56px] lg:items-start lg:justify-end">
           <button
             type="button"
             class="btn-deactivate rounded-2xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-800 transition hover:border-slate-400 hover:bg-slate-200"
