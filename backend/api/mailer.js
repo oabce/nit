@@ -143,7 +143,6 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
 }
 
 async function sendResetEmail(toEmail, resetLink) {
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   await sendMail({
     host: envFile.get('SMTP_HOST'),
     port: envFile.get('SMTP_PORT'),
