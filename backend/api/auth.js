@@ -1,4 +1,7 @@
+const crypto = require('crypto');
 const db = require('../db');
+const { sendResetEmail } = require('./mailer');
+const envFile = require('../envFile');
 
 const STATUS = {
   PENDENTE: 0,
@@ -329,7 +332,7 @@ async function forgotPassword(req, res) {
     );
 
     if (rows.length === 0) {
-      return json(res, 404, { error: 'Nenhum usuario encontrado com esse e-mail para o perfil selecionado.' });
+      return json(res, 200, { success: true, message: 'Se o e-mail estiver cadastrado, voce recebera as instrucoes em breve.' });
     }
 
     const blockedMessage = getBlockedStatusMessage(rows[0].ativo);
