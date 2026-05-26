@@ -1,6 +1,9 @@
 // Login screen profile selection and auth flow.
 
 document.addEventListener('DOMContentLoaded', () => {
+  const API_BASE = ['127.0.0.1', 'localhost'].includes(window.location.hostname) && window.location.port !== '3000'
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : '';
   const card = document.getElementById('card');
   const formArea = document.getElementById('form-area');
   const formIcon = document.getElementById('form-icon');
@@ -60,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const PROFILES = {
     advogado: {
-      icon: '/assets/imgs/advogado.png',
+      icon: 'assets/imgs/advogado.png',
       title: 'Advogado',
       sub: 'Acesso ao sistema OAB/CE',
       color: '#be1622',
@@ -71,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loginField: { name: 'oab', placeholder: 'N\u00FAmero OAB', type: 'text' },
     },
     colaborador: {
-      icon: '/assets/imgs/funcionarios.png',
+      icon: 'assets/imgs/funcionarios.png',
       title: 'Colaborador',
       sub: 'Acesso ao sistema NIT',
       color: '#1b365d',
@@ -245,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function postJSON(url, data) {
-    const res = await fetch(url, {
+    const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -321,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const result = await postJSON('/api/auth/register', payload);
       if (result.error) showMsg('msg-register', result.error, 'error');
-      else showMsg('msg-register', 'Conta criada! Fa\u00E7a login para continuar.', 'success');
+      else showMsg('msg-register', result.message || 'Solicitacao enviada com sucesso. Aguarde a aprovacao do administrador.', 'success');
     } catch {
       showMsg('msg-register', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
