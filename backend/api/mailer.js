@@ -92,7 +92,7 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     const greeting = await c.read();
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
     const ehlo = await c.expect(250, 'EHLO nit.oabce.org.br');
-    console.log('[mailer] EHLO (secure):', ehlo.lines);
+    console.log('[mailer] EHLO completo:', JSON.stringify(ehlo.lines));
   } else {
     const plainSock = await new Promise((resolve, reject) => {
       const s = net.connect(port, host, () => resolve(s));
@@ -111,7 +111,7 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
   }
 
   console.log('[mailer] Tentando AUTH PLAIN para usuario:', user);
-  console.log('[mailer] Senha lida do .env — tamanho:', pass.length, '| conteúdo:', pass);
+  console.log('[mailer] Senha — tamanho:', pass.length, '| hex:', Buffer.from(pass).toString('hex'));
   const plainCreds = b64('\0' + user + '\0' + pass);
   c.write(`AUTH PLAIN ${plainCreds}`);
   const authResp = await c.read();
