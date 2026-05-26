@@ -1,15 +1,17 @@
-// api/auth.js – Handlers de autenticação
-
 const db = require('../db');
 
-// ── Utilitário: lê body JSON da requisição ────────────────────
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let raw = '';
-    req.on('data', chunk => raw += chunk);
+    req.on('data', (chunk) => {
+      raw += chunk;
+    });
     req.on('end', () => {
-      try { resolve(JSON.parse(raw)); }
-      catch { reject(new Error('JSON inválido')); }
+      try {
+        resolve(JSON.parse(raw || '{}'));
+      } catch {
+        reject(new Error('JSON invalido'));
+      }
     });
   });
 }
@@ -19,79 +21,224 @@ function json(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-// ── Login ─────────────────────────────────────────────────────
+function cleanValue(value) {
+  if (typeof value !== 'string') return value ?? null;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
 async function login(req, res) {
   try {
-    const { perfil, email, senha } = await readBody(req);
+    const body = await readBody(req);
+    const perfil = cleanValue(body.perfil);
+    const senha = cleanValue(body.senha);
 
-    if (!email || !senha || !perfil) {
-      return json(res, 400, { error: 'Campos obrigatórios não informados.' });
+    if (!perfil || !senha) {
+      return json(res, 400, { error: 'Campos obrigatorios nao informados.' });
     }
 
-    if (!db) {
-      return json(res, 503, { error: 'Banco de dados não configurado ainda.' });
-    }
+    let rows;
 
-    const [rows] = await db.execute(
-      `SELECT id, nome, email, perfil
-       FROM usuarios
-       WHERE email = ? AND senha = SHA2(?, 256) AND perfil = ?
-       LIMIT 1`,
-      [email, senha, perfil]
-    );
+    if (perfil === 'advogado') {
+      const oab = cleanValue(body.oab);
+      const email = cleanValue(body.email);
+      const loginValue = oab ?? email;
+
+      if (!loginValue) {
+        return json(res, 400, { error: 'Numero OAB ou e-mail nao informado.' });
+      }
+
+      [rows] = await db.execute(
+        `SELECT id,
+                nome_completo AS nome,
+                numero_oab AS oab,
+                cpf,
+                email,
+                nome_usuario AS usuario,
+                ativo,
+                criado_em,
+                atualizado_em
+           FROM usuarios
+          WHERE (numero_oab = ? OR email = ?)
+            AND numero_oab IS NOT NULL
+            AND numero_oab <> ''
+            AND senha_hash = SHA2(?, 256)
+            AND ativo = 1
+          LIMIT 1`,
+        [loginValue, loginValue, senha]
+      );
+    } else if (perfil === 'colaborador') {
+      const usuario = cleanValue(body.usuario);
+      const email = cleanValue(body.email);
+      const loginValue = usuario ?? email;
+
+      if (!loginValue) {
+        return json(res, 400, { error: 'Usuario ou e-mail nao informado.' });
+      }
+
+      [rows] = await db.execute(
+        `SELECT id,
+                nome_completo AS nome,
+                numero_oab AS oab,
+                cpf,
+                email,
+                nome_usuario AS usuario,
+                ativo,
+                criado_em,
+                atualizado_em
+           FROM usuarios
+          WHERE (nome_usuario = ? OR email = ?)
+            AND (numero_oab IS NULL OR numero_oab = '')
+            AND senha_hash = SHA2(?, 256)
+            AND ativo = 1
+          LIMIT 1`,
+        [loginValue, loginValue, senha]
+      );
+    } else {
+      return json(res, 400, { error: 'Perfil invalido.' });
+    }
 
     if (rows.length === 0) {
-      return json(res, 401, { error: 'E-mail ou senha incorretos.' });
+      return json(res, 401, { error: 'Credenciais incorretas.' });
     }
 
-    // TODO: gerar JWT ou sessão
     json(res, 200, { success: true, usuario: rows[0] });
-
   } catch (err) {
     console.error('[auth/login]', err.message);
     json(res, 500, { error: 'Erro interno no servidor.' });
   }
 }
 
-// ── Cadastro ──────────────────────────────────────────────────
 async function register(req, res) {
   try {
     const body = await readBody(req);
-    const { perfil, nome, email, senha, oab } = body;
+    const perfil = cleanValue(body.perfil);
+    const nome = cleanValue(body.nome);
+    const email = cleanValue(body.email);
+    const senha = cleanValue(body.senha);
+    const oab = cleanValue(body.oab);
+    const cpf = cleanValue(body.cpf);
+    const usuario = cleanValue(body.usuario);
 
     if (!perfil || !nome || !email || !senha) {
-      return json(res, 400, { error: 'Campos obrigatórios não informados.' });
+      return json(res, 400, { error: 'Campos obrigatorios nao informados.' });
     }
 
     if (perfil === 'advogado' && !oab) {
-      return json(res, 400, { error: 'Número OAB obrigatório para advogados.' });
+      return json(res, 400, { error: 'Numero OAB obrigatorio para advogados.' });
     }
 
-    if (!db) {
-      return json(res, 503, { error: 'Banco de dados não configurado ainda.' });
+    if (perfil === 'colaborador' && !usuario) {
+      return json(res, 400, { error: 'Usuario obrigatorio para colaboradores.' });
     }
 
-    const [existe] = await db.execute(
+    const [emailExists] = await db.execute(
       'SELECT id FROM usuarios WHERE email = ? LIMIT 1',
       [email]
     );
 
-    if (existe.length > 0) {
-      return json(res, 409, { error: 'E-mail já cadastrado.' });
+    if (emailExists.length > 0) {
+      return json(res, 409, { error: 'E-mail ja cadastrado.' });
+    }
+
+    if (oab) {
+      const [oabExists] = await db.execute(
+        'SELECT id FROM usuarios WHERE numero_oab = ? LIMIT 1',
+        [oab]
+      );
+
+      if (oabExists.length > 0) {
+        return json(res, 409, { error: 'Numero OAB ja cadastrado.' });
+      }
+    }
+
+    if (usuario) {
+      const [usuarioExists] = await db.execute(
+        'SELECT id FROM usuarios WHERE nome_usuario = ? LIMIT 1',
+        [usuario]
+      );
+
+      if (usuarioExists.length > 0) {
+        return json(res, 409, { error: 'Usuario ja cadastrado.' });
+      }
     }
 
     await db.execute(
-      `INSERT INTO usuarios (nome, email, senha, perfil, oab, criado_em)
-       VALUES (?, ?, SHA2(?, 256), ?, ?, NOW())`,
-      [nome, email, senha, perfil, oab || null]
+      `INSERT INTO usuarios (
+         nome_completo,
+         numero_oab,
+         cpf,
+         email,
+         nome_usuario,
+         senha_hash,
+         ativo,
+         criado_em,
+         atualizado_em
+       ) VALUES (?, ?, ?, ?, ?, SHA2(?, 256), 1, NOW(), NOW())`,
+      [
+        nome,
+        perfil === 'advogado' ? oab : null,
+        cpf,
+        email,
+        perfil === 'colaborador' ? usuario : null,
+        senha,
+      ]
     );
 
     json(res, 201, { success: true });
-
   } catch (err) {
     console.error('[auth/register]', err.message);
     json(res, 500, { error: 'Erro interno no servidor.' });
   }
 }
 
-module.exports = { login, register };
+async function forgotPassword(req, res) {
+  try {
+    const body = await readBody(req);
+    const perfil = cleanValue(body.perfil);
+    const email = cleanValue(body.email);
+
+    if (!perfil || !email) {
+      return json(res, 400, { error: 'Perfil e e-mail sao obrigatorios.' });
+    }
+
+    let rows;
+
+    if (perfil === 'advogado') {
+      [rows] = await db.execute(
+        `SELECT id
+           FROM usuarios
+          WHERE email = ?
+            AND numero_oab IS NOT NULL
+            AND numero_oab <> ''
+          LIMIT 1`,
+        [email]
+      );
+    } else if (perfil === 'colaborador') {
+      [rows] = await db.execute(
+        `SELECT id
+           FROM usuarios
+          WHERE email = ?
+            AND (numero_oab IS NULL OR numero_oab = '')
+          LIMIT 1`,
+        [email]
+      );
+    } else {
+      return json(res, 400, { error: 'Perfil invalido.' });
+    }
+
+    if (rows.length === 0) {
+      return json(res, 404, { error: 'Nenhum usuario encontrado com esse e-mail para o perfil selecionado.' });
+    }
+
+    json(res, 200, {
+      success: true,
+      message: 'Solicitacao recebida. Procure o administrador do sistema para redefinir sua senha.',
+    });
+  } catch (err) {
+    console.error('[auth/forgot-password]', err.message);
+    json(res, 500, { error: 'Erro interno no servidor.' });
+  }
+}
+
+module.exports = { login, register, forgotPassword };
