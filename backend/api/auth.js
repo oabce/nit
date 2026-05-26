@@ -183,6 +183,32 @@ async function findUserById(userId) {
   return rows[0] || null;
 }
 
+async function findUserByStatusLookup(perfil, email, cpf) {
+  const profileWhere = buildProfileWhere(perfil);
+
+  if (!profileWhere) return null;
+
+  const [rows] = await db.execute(
+    `SELECT id,
+            nome_completo AS nome,
+            numero_oab AS oab,
+            cpf,
+            email,
+            nome_usuario AS usuario,
+            ativo,
+            criado_em,
+            atualizado_em
+       FROM usuarios
+      WHERE email = ?
+        AND cpf = ?
+        AND ${profileWhere}
+      LIMIT 1`,
+    [email, cpf]
+  );
+
+  return rows[0] || null;
+}
+
 async function ensureUnique(field, value, label, res) {
   if (!value) return true;
 
@@ -346,6 +372,45 @@ async function forgotPassword(req, res) {
     });
   } catch (err) {
     handleServerError(res, 'auth/forgot-password', err);
+  }
+}
+
+async function getAccessRequestStatus(req, res) {
+  try {
+    const body = await readBody(req);
+    const perfil = cleanValue(body.perfil);
+    const email = cleanValue(body.email);
+    const cpf = cleanValue(body.cpf);
+
+    if (!perfil || !email || !cpf) {
+      return json(res, 400, { error: 'Perfil, e-mail e CPF sao obrigatorios.' });
+    }
+
+    const user = await findUserByStatusLookup(perfil, email, cpf);
+
+    if (!user) {
+      return json(res, 404, { error: 'Nenhuma solicitacao encontrada com os dados informados.' });
+    }
+
+    let orientacao = 'Sua solicitacao esta em analise pela equipe administradora.';
+
+    if (user.ativo === STATUS.APROVADO) {
+      orientacao = 'Sua solicitacao foi aprovada. Voce ja pode acessar o sistema com suas credenciais.';
+    } else if (user.ativo === STATUS.RECUSADO) {
+      orientacao = 'Sua solicitacao foi recusada. Procure o administrador para entender os proximos passos.';
+    } else if (user.ativo === STATUS.DESATIVADO) {
+      orientacao = 'Seu cadastro esta desativado. Procure o administrador para solicitar reativacao.';
+    }
+
+    return json(res, 200, {
+      success: true,
+      solicitacao: {
+        ...mapUserRow(user),
+        orientacao,
+      },
+    });
+  } catch (err) {
+    handleServerError(res, 'auth/request-status', err);
   }
 }
 
@@ -519,6 +584,7 @@ module.exports = {
   login,
   register,
   forgotPassword,
+  getAccessRequestStatus,
   listAccessRequests,
   approveAccessRequest,
   rejectAccessRequest,

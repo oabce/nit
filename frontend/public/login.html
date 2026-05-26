@@ -265,6 +265,10 @@
                   class="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-50 hover:shadow-sm active:translate-y-0 flex items-center justify-center">
             Solicitar conta
           </button>
+          <button type="button" id="btn-show-status"
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 transition-all duration-50 hover:border-slate-300 hover:text-slate-800 active:translate-y-0 flex items-center justify-center">
+            Acompanhar solicitacao
+          </button>
           <button type="submit" id="btn-login-submit"
                   class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-50 hover:shadow-lg active:translate-y-0 flex items-center justify-center gap-2">
             <span>Entrar</span>
@@ -306,6 +310,31 @@
             <i class="fas fa-spinner fa-spin hidden btn-spinner"></i>
           </button>
           <button type="button" id="btn-show-login-from-recover"
+                  class="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors pt-0.5">
+            Voltar para o login
+          </button>
+        </form>
+
+        <form id="form-status" class="space-y-3 hidden" novalidate>
+          <div class="msg" id="msg-status"></div>
+          <p class="text-[11px] leading-relaxed text-slate-500">
+            Consulte o andamento da sua solicitacao usando o e-mail e o CPF informados no cadastro.
+          </p>
+          <input class="field" id="status-email" type="email" name="email" placeholder="E-mail" required />
+          <input class="field" id="status-cpf" type="text" name="cpf" placeholder="CPF" required />
+          <div id="status-result" class="hidden rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+            <p class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Andamento</p>
+            <p id="status-badge" class="mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"></p>
+            <p id="status-name" class="mt-3 text-sm font-semibold text-slate-800"></p>
+            <p id="status-detail" class="mt-1 text-[11px] text-slate-500"></p>
+            <p id="status-guidance" class="mt-3 text-[12px] leading-relaxed text-slate-600"></p>
+          </div>
+          <button type="submit" id="btn-status-submit"
+                  class="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 flex items-center justify-center gap-2">
+            <span>Consultar andamento</span>
+            <i class="fas fa-spinner fa-spin hidden btn-spinner"></i>
+          </button>
+          <button type="button" id="btn-show-login-from-status"
                   class="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors pt-0.5">
             Voltar para o login
           </button>
