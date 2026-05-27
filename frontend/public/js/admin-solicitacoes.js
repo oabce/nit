@@ -18,10 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeEmpty = document.getElementById('active-empty');
   const activeTableWrapper = document.getElementById('active-table-wrapper');
   const activeUserList = document.getElementById('active-user-list');
+  const credentialsModal = document.getElementById('credentials-modal');
+  const credentialsModalSubtitle = document.getElementById('credentials-modal-subtitle');
+  const credentialsForm = document.getElementById('credentials-form');
+  const credentialsUserId = document.getElementById('credentials-user-id');
+  const credentialsUsername = document.getElementById('credentials-username');
+  const credentialsPassword = document.getElementById('credentials-password');
+  const credentialsFeedback = document.getElementById('credentials-feedback');
+  const btnCloseCredentialsModal = document.getElementById('btn-close-credentials-modal');
+  const btnCancelCredentialsModal = document.getElementById('btn-cancel-credentials-modal');
+  const btnSaveCredentials = document.getElementById('btn-save-credentials');
 
   let pendingRequests = [];
   let activeUsers = [];
   let filterTerm = '';
+  let selectedCollaborator = null;
 
   function formatDate(value) {
     if (!value) return '-';
@@ -45,6 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
   function hideFeedback() {
     feedback.classList.add('hidden');
     feedback.textContent = '';
+  }
+
+  function showCredentialsFeedback(message, type) {
+    credentialsFeedback.textContent = message;
+    credentialsFeedback.className = `rounded-2xl px-4 py-3 text-sm font-semibold ${
+      type === 'error'
+        ? 'bg-rose-50 text-rose-700'
+        : 'bg-emerald-50 text-emerald-700'
+    }`;
+    credentialsFeedback.classList.remove('hidden');
+  }
+
+  function hideCredentialsFeedback() {
+    credentialsFeedback.classList.add('hidden');
+    credentialsFeedback.textContent = '';
   }
 
   function setLoading(loading) {
@@ -84,6 +110,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getDocumentLabel(record) {
     return record.oab ? `OAB ${record.oab}` : record.cpf || '-';
+  }
+
+  function openCredentialsModal(record) {
+    selectedCollaborator = record;
+    credentialsUserId.value = record.id;
+    credentialsUsername.value = record.usuario || '';
+    credentialsPassword.value = '';
+    credentialsModalSubtitle.textContent = `${record.nome} • ${record.email}`;
+    hideCredentialsFeedback();
+    credentialsModal.classList.remove('hidden');
+    credentialsModal.classList.add('flex');
+    credentialsUsername.focus();
+  }
+
+  function closeCredentialsModal() {
+    selectedCollaborator = null;
+    credentialsForm.reset();
+    hideCredentialsFeedback();
+    credentialsModal.classList.add('hidden');
+    credentialsModal.classList.remove('flex');
+  }
+
+  function updateRecordCredentials(list, updatedRecord) {
+    return list.map((record) => (record.id === updatedRecord.id ? { ...record, usuario: updatedRecord.usuario } : record));
   }
 
   function renderPendingRequests() {
@@ -137,6 +187,15 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row lg:min-h-[56px] lg:items-start lg:justify-end">
+          ${request.perfil === 'colaborador' ? `
+          <button
+            type="button"
+            class="btn-credentials rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+            data-id="${request.id}"
+          >
+            . . .
+          </button>
+          ` : ''}
           <button
             type="button"
             class="btn-approve rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
@@ -211,6 +270,15 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row lg:min-h-[56px] lg:items-start lg:justify-end">
+          ${user.perfil === 'colaborador' ? `
+          <button
+            type="button"
+            class="btn-credentials rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+            data-id="${user.id}"
+          >
+            . . .
+          </button>
+          ` : ''}
           <button
             type="button"
             class="btn-deactivate rounded-2xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-800 transition hover:border-slate-400 hover:bg-slate-200"
@@ -316,6 +384,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function saveCollaboratorCredentials() {
+    hideCredentialsFeedback();
+    btnSaveCredentials.disabled = true;
+    btnSaveCredentials.classList.add('opacity-70', 'cursor-not-allowed');
+
+    try {
+      const id = Number.parseInt(credentialsUserId.value, 10);
+      const response = await fetch(`${API_BASE}/api/admin/access-requests/${id}/credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usuario: credentialsUsername.value,
+          senha: credentialsPassword.value,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Nao foi possivel salvar as credenciais.');
+      }
+
+      pendingRequests = updateRecordCredentials(pendingRequests, data.solicitacao);
+      activeUsers = updateRecordCredentials(activeUsers, data.solicitacao);
+      renderAll();
+      showFeedback(data.message || 'Credenciais definidas com sucesso.', 'success');
+      closeCredentialsModal();
+    } catch (error) {
+      showCredentialsFeedback(error.message || 'Erro ao salvar credenciais.', 'error');
+    } finally {
+      btnSaveCredentials.disabled = false;
+      btnSaveCredentials.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
+  }
+
   filterInput.addEventListener('input', (event) => {
     filterTerm = event.target.value;
     renderAll();
@@ -324,8 +426,15 @@ document.addEventListener('DOMContentLoaded', () => {
   btnRefresh.addEventListener('click', fetchDashboard);
 
   pendingRequestList.addEventListener('click', (event) => {
+    const credentialsButton = event.target.closest('.btn-credentials');
     const approveButton = event.target.closest('.btn-approve');
     const rejectButton = event.target.closest('.btn-reject');
+
+    if (credentialsButton) {
+      const record = pendingRequests.find((item) => item.id === Number.parseInt(credentialsButton.dataset.id, 10));
+      if (record) openCredentialsModal(record);
+      return;
+    }
 
     if (approveButton) {
       reviewRequest(Number.parseInt(approveButton.dataset.id, 10), 'approve');
@@ -338,10 +447,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   activeUserList.addEventListener('click', (event) => {
+    const credentialsButton = event.target.closest('.btn-credentials');
     const deactivateButton = event.target.closest('.btn-deactivate');
+
+    if (credentialsButton) {
+      const record = activeUsers.find((item) => item.id === Number.parseInt(credentialsButton.dataset.id, 10));
+      if (record) openCredentialsModal(record);
+      return;
+    }
 
     if (deactivateButton) {
       deactivateUser(Number.parseInt(deactivateButton.dataset.id, 10));
+    }
+  });
+
+  credentialsForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveCollaboratorCredentials();
+  });
+
+  btnCloseCredentialsModal.addEventListener('click', closeCredentialsModal);
+  btnCancelCredentialsModal.addEventListener('click', closeCredentialsModal);
+
+  credentialsModal.addEventListener('click', (event) => {
+    if (event.target.classList.contains('modal-backdrop')) {
+      closeCredentialsModal();
     }
   });
 

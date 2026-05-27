@@ -129,6 +129,10 @@ function mapUserRow(row) {
   };
 }
 
+function isCollaboratorRow(row) {
+  return !row.oab;
+}
+
 async function findUserByLogin(perfil, loginValue, includePassword, senha) {
   const profileWhere = buildProfileWhere(perfil);
 
@@ -168,6 +172,7 @@ async function findUserById(userId) {
             cpf,
             email,
             nome_usuario AS usuario,
+            senha_hash,
             ativo,
             criado_em,
             atualizado_em
@@ -175,6 +180,19 @@ async function findUserById(userId) {
       WHERE id = ?
       LIMIT 1`,
     [userId]
+  );
+
+  return rows[0] || null;
+}
+
+async function findUserByUsername(usuario, excludeUserId) {
+  const [rows] = await db.execute(
+    `SELECT id
+       FROM usuarios
+      WHERE nome_usuario = ?
+        AND id <> ?
+      LIMIT 1`,
+    [usuario, excludeUserId]
   );
 
   return rows[0] || null;
@@ -577,6 +595,57 @@ async function deactivateUserAccount(req, res, userId) {
   }
 }
 
+async function setCollaboratorCredentials(req, res, userId) {
+  try {
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return json(res, 400, { error: 'Identificador do usuario invalido.' });
+    }
+
+    const body = await readBody(req);
+    const usuario = cleanValue(body.usuario);
+    const senha = cleanValue(body.senha);
+
+    if (!usuario || !senha) {
+      return json(res, 400, { error: 'Usuario e senha sao obrigatorios.' });
+    }
+
+    const user = await findUserById(userId);
+
+    if (!user) {
+      return json(res, 404, { error: 'Cadastro nao encontrado.' });
+    }
+
+    if (!isCollaboratorRow(user)) {
+      return json(res, 409, { error: 'Somente colaboradores podem receber usuario e senha por esta acao.' });
+    }
+
+    const usernameConflict = await findUserByUsername(usuario, userId);
+
+    if (usernameConflict) {
+      return json(res, 409, { error: 'Este nome de usuario ja esta em uso.' });
+    }
+
+    await db.execute(
+      `UPDATE usuarios
+          SET nome_usuario = ?,
+              senha_hash = SHA2(?, 256),
+              atualizado_em = NOW()
+        WHERE id = ?`,
+      [usuario, senha, userId]
+    );
+
+    const updatedUser = await findUserById(userId);
+
+    return json(res, 200, {
+      success: true,
+      message: 'Usuario e senha do colaborador definidos com sucesso.',
+      solicitacao: mapUserRow(updatedUser),
+    });
+  } catch (err) {
+    handleServerError(res, 'admin/access-requests/credentials', err);
+  }
+}
+
 module.exports = {
   login,
   register,
@@ -586,4 +655,5 @@ module.exports = {
   approveAccessRequest,
   rejectAccessRequest,
   deactivateUserAccount,
+  setCollaboratorCredentials,
 };

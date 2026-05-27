@@ -49,6 +49,7 @@ const {
   approveAccessRequest,
   rejectAccessRequest,
   deactivateUserAccount,
+  setCollaboratorCredentials,
 } = require('./api/auth');
 
 const server = http.createServer((req, res) => {
@@ -85,6 +86,11 @@ const server = http.createServer((req, res) => {
   const deactivateMatch = req.url.match(/^\/api\/admin\/access-requests\/(\d+)\/deactivate$/);
   if (deactivateMatch && req.method === 'POST') {
     return deactivateUserAccount(req, res, Number.parseInt(deactivateMatch[1], 10));
+  }
+
+  const credentialsMatch = req.url.match(/^\/api\/admin\/access-requests\/(\d+)\/credentials$/);
+  if (credentialsMatch && req.method === 'POST') {
+    return setCollaboratorCredentials(req, res, Number.parseInt(credentialsMatch[1], 10));
   }
 
   if (req.url.startsWith('/api/')) {
