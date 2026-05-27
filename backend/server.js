@@ -1,9 +1,11 @@
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
+const env  = require('./envFile');
 
-const PORT   = 3000;
+const PORT   = Number(env.get('PORT', 3000));
 const PUBLIC = path.join(__dirname, '../frontend/public');
+const IS_PRODUCTION = env.get('NODE_ENV') === 'production';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -34,11 +36,13 @@ function broadcast() {
   clients.forEach(res => res.write('data: reload\n\n'));
 }
 
-fs.watch(PUBLIC, { recursive: true }, (_, filename) => {
-  if (!filename) return;
-  console.log(`  [live-reload] ${filename}`);
-  broadcast();
-});
+if (!IS_PRODUCTION) {
+  fs.watch(PUBLIC, { recursive: true }, (_, filename) => {
+    if (!filename) return;
+    console.log(`  [live-reload] ${filename}`);
+    broadcast();
+  });
+}
 
 const {
   login,
@@ -100,7 +104,7 @@ const server = http.createServer((req, res) => {
   }
 
   // ── Live-reload ───────────────────────────────────────────────
-  if (req.url === '/livereload') {
+  if (!IS_PRODUCTION && req.url === '/livereload') {
     res.writeHead(200, {
       'Content-Type':  'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -134,7 +138,7 @@ const server = http.createServer((req, res) => {
 
     res.writeHead(200, { 'Content-Type': mime });
 
-    if (ext === '.html') {
+    if (!IS_PRODUCTION && ext === '.html') {
       res.end(data.toString().replace('</body>', `${LIVE_RELOAD_SCRIPT}</body>`));
     } else {
       res.end(data);
@@ -144,5 +148,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n  Servidor rodando em http://localhost:${PORT}`);
-  console.log('  Live-reload ativo\n');
+  console.log(`  Live-reload ${IS_PRODUCTION ? 'desativado' : 'ativo'}\n`);
 });

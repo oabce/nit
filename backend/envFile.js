@@ -1,30 +1,36 @@
 'use strict';
+
 const fs = require('fs');
 const path = require('path');
 
-const candidates = [
-  path.join(__dirname, '../.env'),
-  path.join(__dirname, '../.env.example'),
-];
-
+const envPath = path.join(__dirname, '../.env');
 const parsed = {};
 
-for (const f of candidates) {
-  if (!fs.existsSync(f)) continue;
-  const lines = fs.readFileSync(f, 'utf8').split('\n');
+if (fs.existsSync(envPath)) {
+  const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+
   for (const line of lines) {
-    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.+)$/);
-    if (m) {
-      const key = m[1];
-      const val = m[2].replace(/\r$/, '');
-      if (!(key in parsed)) parsed[key] = val;
-    }
+    const match = line.match(/^\s*([A-Z_][A-Z0-9_]*)=(.*)\s*$/);
+    if (!match) continue;
+
+    const key = match[1];
+    const rawValue = match[2].replace(/\r$/, '');
+    const value = rawValue.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
+
+    parsed[key] = value;
   }
-  break;
 }
 
-function get(key) {
-  return parsed[key] || process.env[key] || null;
+function get(key, fallback = null) {
+  if (process.env[key] !== undefined && process.env[key] !== '') {
+    return process.env[key];
+  }
+
+  if (parsed[key] !== undefined && parsed[key] !== '') {
+    return parsed[key];
+  }
+
+  return fallback;
 }
 
 module.exports = { get };
