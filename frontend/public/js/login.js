@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
       focusCls: 'field-red',
       showOab: true,
       showUsuario: false,
-      loginField: { name: 'oab', placeholder: 'N\u00FAmero OAB', type: 'text' },
+      loginField: { name: 'oab', placeholder: 'N\u00FAmero OAB ou E-mail', type: 'text' },
     },
     colaborador: {
       icon: 'assets/imgs/funcionarios.png',
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
       focusCls: '',
       showOab: false,
       showUsuario: true,
-      loginField: { name: 'usuario', placeholder: 'Usu\u00E1rio', type: 'text' },
+      loginField: { name: 'usuario', placeholder: 'Usu\u00E1rio ou E-mail', type: 'text' },
     },
   };
 
@@ -337,12 +337,21 @@ document.addEventListener('DOMContentLoaded', () => {
     setLoading(btnLoginSubmit, true);
 
     try {
+      const identifierValue = loginIdentifier.value.trim();
       const loginPayload = { perfil: activeProfile, senha: form.senha.value };
-      loginPayload[loginIdentifier.name] = loginIdentifier.value;
+      if (identifierValue.includes('@')) {
+        loginPayload.email = identifierValue;
+      } else {
+        loginPayload[loginIdentifier.name] = identifierValue;
+      }
 
       const result = await postJSON('/api/auth/login', loginPayload);
-      if (result.error) showMsg('msg-login', result.error, 'error');
-      else showMsg('msg-login', 'Login realizado com sucesso!', 'success');
+      if (result.error) {
+        showMsg('msg-login', result.error, 'error');
+      } else {
+        localStorage.setItem('nit_user', JSON.stringify(result.usuario));
+        window.location.href = result.usuario.adm ? '/admin.html' : '/bem-vindo.html';
+      }
     } catch {
       showMsg('msg-login', 'Erro de conex\u00E3o. Tente novamente.', 'error');
     } finally {
