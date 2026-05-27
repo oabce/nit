@@ -72,7 +72,7 @@
       if (!raw) { window.location.href = '/login.html'; return; }
 
       const user = JSON.parse(raw);
-      if (user.adm) { window.location.href = '/admin.html'; return; }
+      if (user.adm) { window.location.href = '/admin-solicitacoes.html'; return; }
 
       const nome = user.nome || 'Usuário';
       document.getElementById('welcome-name').textContent = nome;
