@@ -1,4 +1,8 @@
 'use strict';
+// Arquivo legado: este modulo nao participa do fluxo atual do painel
+// administrativo. As rotas ativas de revisao, aprovacao, recusa,
+// desativacao e definicao de credenciais estao em backend/api/auth.js
+// e sao conectadas por backend/server.js.
 const db = require('../db');
 
 function readBody(req) {
