@@ -19,20 +19,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeTableWrapper = document.getElementById('active-table-wrapper');
   const activeUserList = document.getElementById('active-user-list');
   const credentialsModal = document.getElementById('credentials-modal');
+  const credentialsModalEyebrow = document.getElementById('credentials-modal-eyebrow');
   const credentialsModalSubtitle = document.getElementById('credentials-modal-subtitle');
   const credentialsForm = document.getElementById('credentials-form');
   const credentialsUserId = document.getElementById('credentials-user-id');
   const credentialsUsername = document.getElementById('credentials-username');
   const credentialsPassword = document.getElementById('credentials-password');
+  const credentialsFields = document.getElementById('credentials-fields');
   const credentialsFeedback = document.getElementById('credentials-feedback');
   const btnCloseCredentialsModal = document.getElementById('btn-close-credentials-modal');
   const btnCancelCredentialsModal = document.getElementById('btn-cancel-credentials-modal');
   const btnSaveCredentials = document.getElementById('btn-save-credentials');
+  const btnModalApprove = document.getElementById('btn-modal-approve');
+  const btnModalReject = document.getElementById('btn-modal-reject');
+  const btnModalDeactivate = document.getElementById('btn-modal-deactivate');
 
   let pendingRequests = [];
   let activeUsers = [];
   let filterTerm = '';
-  let selectedCollaborator = null;
+  let selectedRecord = null;
 
   function formatDate(value) {
     if (!value) return '-';
@@ -112,28 +117,41 @@ document.addEventListener('DOMContentLoaded', () => {
     return record.oab ? `OAB ${record.oab}` : record.cpf || '-';
   }
 
+  function updateRecordCredentials(list, updatedRecord) {
+    return list.map((record) => (record.id === updatedRecord.id ? { ...record, usuario: updatedRecord.usuario } : record));
+  }
+
   function openCredentialsModal(record) {
-    selectedCollaborator = record;
+    selectedRecord = record;
     credentialsUserId.value = record.id;
     credentialsUsername.value = record.usuario || '';
     credentialsPassword.value = '';
+    credentialsModalEyebrow.textContent = record.perfil === 'colaborador' ? 'Colaborador' : 'Advogado';
     credentialsModalSubtitle.textContent = `${record.nome} • ${record.email}`;
+    credentialsFields.classList.toggle('hidden', record.perfil !== 'colaborador');
+    btnSaveCredentials.classList.toggle('hidden', record.perfil !== 'colaborador');
+    btnModalApprove.classList.toggle('hidden', record.status !== 'pendente');
+    btnModalReject.classList.toggle('hidden', record.status !== 'pendente');
+    btnModalDeactivate.classList.toggle('hidden', record.status !== 'aprovado');
     hideCredentialsFeedback();
     credentialsModal.classList.remove('hidden');
     credentialsModal.classList.add('flex');
-    credentialsUsername.focus();
+
+    if (record.perfil === 'colaborador') {
+      credentialsUsername.focus();
+    } else if (record.status === 'pendente') {
+      btnModalApprove.focus();
+    } else if (record.status === 'aprovado') {
+      btnModalDeactivate.focus();
+    }
   }
 
   function closeCredentialsModal() {
-    selectedCollaborator = null;
+    selectedRecord = null;
     credentialsForm.reset();
     hideCredentialsFeedback();
     credentialsModal.classList.add('hidden');
     credentialsModal.classList.remove('flex');
-  }
-
-  function updateRecordCredentials(list, updatedRecord) {
-    return list.map((record) => (record.id === updatedRecord.id ? { ...record, usuario: updatedRecord.usuario } : record));
   }
 
   function renderPendingRequests() {
@@ -187,30 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row lg:min-h-[56px] lg:items-start lg:justify-end">
-          ${request.perfil === 'colaborador' ? `
           <button
             type="button"
             class="btn-credentials rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
             data-id="${request.id}"
           >
             . . .
-          </button>
-          ` : ''}
-          <button
-            type="button"
-            class="btn-approve rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
-            data-id="${request.id}"
-          >
-            <i class="fa-solid fa-check mr-2"></i>
-            Aprovar
-          </button>
-          <button
-            type="button"
-            class="btn-reject rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
-            data-id="${request.id}"
-          >
-            <i class="fa-solid fa-xmark mr-2"></i>
-            Recusar
           </button>
         </div>
       `;
@@ -270,22 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row lg:min-h-[56px] lg:items-start lg:justify-end">
-          ${user.perfil === 'colaborador' ? `
           <button
             type="button"
             class="btn-credentials rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
             data-id="${user.id}"
           >
             . . .
-          </button>
-          ` : ''}
-          <button
-            type="button"
-            class="btn-deactivate rounded-2xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-800 transition hover:border-slate-400 hover:bg-slate-200"
-            data-id="${user.id}"
-          >
-            <i class="fa-solid fa-user-slash mr-2"></i>
-            Desativar
           </button>
         </div>
       `;
@@ -427,37 +417,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   pendingRequestList.addEventListener('click', (event) => {
     const credentialsButton = event.target.closest('.btn-credentials');
-    const approveButton = event.target.closest('.btn-approve');
-    const rejectButton = event.target.closest('.btn-reject');
 
     if (credentialsButton) {
       const record = pendingRequests.find((item) => item.id === Number.parseInt(credentialsButton.dataset.id, 10));
       if (record) openCredentialsModal(record);
-      return;
-    }
-
-    if (approveButton) {
-      reviewRequest(Number.parseInt(approveButton.dataset.id, 10), 'approve');
-      return;
-    }
-
-    if (rejectButton) {
-      reviewRequest(Number.parseInt(rejectButton.dataset.id, 10), 'reject');
     }
   });
 
   activeUserList.addEventListener('click', (event) => {
     const credentialsButton = event.target.closest('.btn-credentials');
-    const deactivateButton = event.target.closest('.btn-deactivate');
 
     if (credentialsButton) {
       const record = activeUsers.find((item) => item.id === Number.parseInt(credentialsButton.dataset.id, 10));
       if (record) openCredentialsModal(record);
-      return;
-    }
-
-    if (deactivateButton) {
-      deactivateUser(Number.parseInt(deactivateButton.dataset.id, 10));
     }
   });
 
@@ -468,6 +440,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnCloseCredentialsModal.addEventListener('click', closeCredentialsModal);
   btnCancelCredentialsModal.addEventListener('click', closeCredentialsModal);
+  btnModalApprove.addEventListener('click', async () => {
+    if (!selectedRecord) return;
+    await reviewRequest(selectedRecord.id, 'approve');
+    closeCredentialsModal();
+  });
+  btnModalReject.addEventListener('click', async () => {
+    if (!selectedRecord) return;
+    await reviewRequest(selectedRecord.id, 'reject');
+    closeCredentialsModal();
+  });
+  btnModalDeactivate.addEventListener('click', async () => {
+    if (!selectedRecord) return;
+    await deactivateUser(selectedRecord.id);
+    closeCredentialsModal();
+  });
 
   credentialsModal.addEventListener('click', (event) => {
     if (event.target.classList.contains('modal-backdrop')) {
