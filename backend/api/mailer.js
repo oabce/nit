@@ -178,4 +178,58 @@ async function sendResetEmail(toEmail, resetLink) {
   });
 }
 
-module.exports = { sendResetEmail };
+function buildPortalUrl(pathname = '/login.html') {
+  const appUrl = envFile.get('APP_URL');
+
+  if (!appUrl) {
+    return pathname;
+  }
+
+  return new URL(pathname, appUrl).toString();
+}
+
+async function sendApprovalEmail(user) {
+  const isAdvogado = Boolean(user.oab);
+  const portalUrl = buildPortalUrl('/login.html');
+  const accessLabel = isAdvogado ? 'Numero OAB ou e-mail' : 'Usuario ou e-mail';
+  const accessValue = isAdvogado ? (user.oab || user.email) : (user.usuario || user.email);
+  const profileLabel = isAdvogado ? 'advogado' : 'colaborador';
+
+  await sendMail({
+    host: envFile.get('SMTP_HOST'),
+    port: envFile.get('SMTP_PORT'),
+    secure: envFile.get('SMTP_SECURE') === 'true',
+    user: envFile.get('SMTP_USER'),
+    pass: envFile.get('SMTP_PASS'),
+    from: `"NIT - OAB/CE" <${envFile.get('SMTP_FROM') || envFile.get('SMTP_USER')}>`,
+    to: user.email,
+    subject: 'Solicitacao aprovada - NIT OAB/CE',
+    html: `
+<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#f5f5f5;">
+  <div style="background:#ffffff;border-radius:14px;padding:32px;border:1px solid #e2e8f0;">
+    <h2 style="color:#12304d;font-size:22px;margin:0 0 10px;">Solicitacao aprovada</h2>
+    <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px;">
+      Ola, <strong>${user.nome}</strong>.
+      Sua solicitacao de acesso ao sistema do NIT foi aprovada com sucesso.
+    </p>
+    <p style="color:#475569;font-size:14px;line-height:1.7;margin:0 0 18px;">
+      Perfil liberado: <strong>${profileLabel}</strong><br/>
+      ${accessLabel}: <strong>${accessValue}</strong>
+    </p>
+    <a href="${portalUrl}"
+       style="display:inline-block;background:#12304d;color:#ffffff;text-decoration:none;
+              padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;">
+      Acessar sistema
+    </a>
+    <p style="color:#64748b;font-size:13px;line-height:1.7;margin:24px 0 0;">
+      Caso tenha dificuldades para entrar, procure a administracao do sistema.
+    </p>
+  </div>
+  <p style="color:#94a3b8;font-size:11px;text-align:center;margin:16px 0 0;">
+    © 2026 NIT - OAB/CE. Todos os direitos reservados.
+  </p>
+</div>`,
+  });
+}
+
+module.exports = { sendResetEmail, sendApprovalEmail };

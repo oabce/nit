@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const db = require('../db');
-const { sendResetEmail } = require('./mailer');
+const { sendResetEmail, sendApprovalEmail } = require('./mailer');
 const envFile = require('../envFile');
 
 const STATUS = {
@@ -528,13 +528,25 @@ async function updatePendingRequestStatus(res, userId, nextStatus) {
   );
 
   const updatedRequest = await findUserById(userId);
+  const mappedRequest = mapUserRow(updatedRequest);
+  let message = nextStatus === STATUS.APROVADO
+    ? 'Solicitacao aprovada com sucesso.'
+    : 'Solicitacao recusada com sucesso.';
+
+  if (nextStatus === STATUS.APROVADO && mappedRequest.email) {
+    try {
+      await sendApprovalEmail(mappedRequest);
+      message = 'Solicitacao aprovada com sucesso. Um e-mail foi enviado ao usuario.';
+    } catch (err) {
+      console.error('[admin/access-requests/approve-email]', err.message || err);
+      message = 'Solicitacao aprovada com sucesso, mas nao foi possivel enviar o e-mail ao usuario.';
+    }
+  }
 
   return json(res, 200, {
     success: true,
-    message: nextStatus === STATUS.APROVADO
-      ? 'Solicitacao aprovada com sucesso.'
-      : 'Solicitacao recusada com sucesso.',
-    solicitacao: mapUserRow(updatedRequest),
+    message,
+    solicitacao: mappedRequest,
   });
 }
 
