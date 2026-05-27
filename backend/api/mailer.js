@@ -1,9 +1,49 @@
 'use strict';
 const envFile = require('../envFile');
+const crypto = require('crypto');
 const net = require('net');
 const tls = require('tls');
 
 const b64 = (s) => Buffer.from(String(s)).toString('base64');
+const LEGACY_TLS_OPTIONS = {
+  minVersion: 'TLSv1',
+  secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT || 0,
+};
+
+function parseBoolean(value, fallback = false) {
+  if (value === undefined || value === null || value === '') return fallback;
+  return String(value).toLowerCase() === 'true';
+}
+
+function normalizePassword(value) {
+  if (typeof value !== 'string') return value;
+
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function getEhloName() {
+  try {
+    const appUrl = envFile.get('APP_URL');
+    if (!appUrl) return 'localhost';
+    return new URL(appUrl).hostname || 'localhost';
+  } catch {
+    return 'localhost';
+  }
+}
+
+function getTlsOptions(host, compatibilityMode) {
+  return {
+    host,
+    servername: host,
+    rejectUnauthorized: false,
+    ...(compatibilityMode ? LEGACY_TLS_OPTIONS : {}),
+  };
+}
 
 function createSmtpClient(initialSock) {
   let sock = initialSock;
@@ -60,11 +100,11 @@ function createSmtpClient(initialSock) {
       return r;
     },
 
-    async upgradeTls(host) {
+    async upgradeTls(host, compatibilityMode) {
       sock.removeListener('data', onData);
       const ts = await new Promise((resolve, reject) => {
         let s;
-        s = tls.connect({ socket: sock, host, servername: host, rejectUnauthorized: false }, () => resolve(s));
+        s = tls.connect({ socket: sock, ...getTlsOptions(host, compatibilityMode) }, () => resolve(s));
         s.once('error', reject);
       });
       sock = ts;
@@ -76,22 +116,50 @@ function createSmtpClient(initialSock) {
   };
 }
 
-async function sendMail({ host, port, secure, user, pass, from, to, subject, html }) {
-  port = Number(port) || 587;
+function buildTransportAttempts({ host, port, secure }) {
+  const configuredPort = Number(port) || (secure ? 465 : 587);
+  const attempts = [
+    { host, port: configuredPort, secure, compatibilityMode: false },
+  ];
+
+  if (configuredPort === 465) {
+    attempts.push({ host, port: 587, secure: false, compatibilityMode: false });
+  } else if (configuredPort === 587) {
+    attempts.push({ host, port: 465, secure: true, compatibilityMode: false });
+  }
+
+  const compatibilityFallbacks = attempts.map((attempt) => ({
+    ...attempt,
+    compatibilityMode: true,
+  }));
+
+  return [...attempts, ...compatibilityFallbacks].filter(
+    (attempt, index, list) => list.findIndex((item) =>
+      item.host === attempt.host
+      && item.port === attempt.port
+      && item.secure === attempt.secure
+      && item.compatibilityMode === attempt.compatibilityMode
+    ) === index
+  );
+}
+
+async function sendMailAttempt({ host, port, secure, user, pass, from, to, subject, html, compatibilityMode }) {
   const fromEmail = (from.match(/<(.+)>/) || [])[1] || from;
+  const ehloName = getEhloName();
+  const smtpPassword = normalizePassword(pass);
 
   let c;
 
   if (secure) {
     const tlsSock = await new Promise((resolve, reject) => {
       let s;
-      s = tls.connect({ host, port, rejectUnauthorized: false }, () => resolve(s));
+      s = tls.connect({ host, port, ...getTlsOptions(host, compatibilityMode) }, () => resolve(s));
       s.once('error', reject);
     });
     c = createSmtpClient(tlsSock);
     const greeting = await c.read();
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
-    await c.expect(250, 'EHLO nit.oabce.org.br');
+    await c.expect(250, `EHLO ${ehloName}`);
   } else {
     const plainSock = await new Promise((resolve, reject) => {
       const s = net.connect(port, host, () => resolve(s));
@@ -100,13 +168,13 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     c = createSmtpClient(plainSock);
     const greeting = await c.read();
     if (greeting.code !== 220) throw new Error('SMTP greeting: ' + greeting.line);
-    await c.expect(250, 'EHLO nit.oabce.org.br');
+    await c.expect(250, `EHLO ${ehloName}`);
     await c.expect(220, 'STARTTLS');
-    await c.upgradeTls(host);
-    await c.expect(250, 'EHLO nit.oabce.org.br');
+    await c.upgradeTls(host, compatibilityMode);
+    await c.expect(250, `EHLO ${ehloName}`);
   }
 
-  const plainCreds = b64('\0' + user + '\0' + pass);
+  const plainCreds = b64('\0' + user + '\0' + smtpPassword);
   c.write(`AUTH PLAIN ${plainCreds}`);
   const authResp = await c.read();
 
@@ -115,7 +183,7 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
     await c.read();
     c.write(b64(user));
     await c.read();
-    c.write(b64(pass));
+    c.write(b64(smtpPassword));
     const loginResp = await c.read();
     if (loginResp.code !== 235) throw new Error(`SMTP AUTH falhou: ${loginResp.line}`);
   }
@@ -140,6 +208,31 @@ async function sendMail({ host, port, secure, user, pass, from, to, subject, htm
 
   c.write('QUIT');
   setTimeout(() => c.destroy(), 500);
+}
+
+async function sendMail(options) {
+  const secure = parseBoolean(options.secure, false);
+  const attempts = buildTransportAttempts({
+    host: options.host,
+    port: options.port,
+    secure,
+  });
+  const errors = [];
+
+  for (const attempt of attempts) {
+    try {
+      await sendMailAttempt({
+        ...options,
+        ...attempt,
+      });
+      return;
+    } catch (err) {
+      const label = `${attempt.host}:${attempt.port} ${attempt.secure ? 'SSL/TLS' : 'STARTTLS'}${attempt.compatibilityMode ? ' compat' : ''}`;
+      errors.push(`${label} -> ${err.message || err}`);
+    }
+  }
+
+  throw new Error(`Falha ao enviar e-mail. Tentativas SMTP: ${errors.join(' | ')}`);
 }
 
 async function sendResetEmail(toEmail, resetLink) {
