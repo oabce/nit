@@ -10,6 +10,7 @@ const STATUS = {
   DESATIVADO: 3,
 };
 
+// Lê o corpo bruto da requisição e converte para JSON.
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let raw = '';
@@ -26,23 +27,35 @@ function readBody(req) {
   });
 }
 
+// Envia uma resposta JSON padronizada.
 function json(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
 }
 
+// Centraliza logs e respostas de erro interno da API.
 function handleServerError(res, scope, err) {
   const detail = err.sqlMessage || err.message || 'Erro interno no servidor.';
   console.error(`[${scope}]`, detail);
   json(res, 500, { error: detail });
 }
 
+// Remove espaços extras e normaliza strings vazias para null.
 function cleanValue(value) {
   if (typeof value !== 'string') return value ?? null;
   const trimmed = value.trim();
   return trimmed === '' ? null : trimmed;
 }
 
+// Mantém apenas dígitos e opcionalmente limita o tamanho do valor.
+function digitsOnly(value, maxLength = null) {
+  if (typeof value !== 'string') return value ?? null;
+  const normalized = value.replace(/\D/g, '');
+  if (!normalized) return null;
+  return maxLength ? normalized.slice(0, maxLength) : normalized;
+}
+
+// Monta o filtro SQL que separa advogados de colaboradores.
 function buildProfileWhere(perfil) {
   if (perfil === 'advogado') {
     return "numero_oab IS NOT NULL AND numero_oab <> ''";
@@ -55,9 +68,10 @@ function buildProfileWhere(perfil) {
   return null;
 }
 
+// Define qual identificador deve ser usado no login conforme o perfil.
 function getLoginField(perfil, body) {
   if (perfil === 'advogado') {
-    const oab = cleanValue(body.oab);
+    const oab = digitsOnly(body.oab, 5);
     const email = cleanValue(body.email);
     return {
       value: oab ?? email,
@@ -77,6 +91,7 @@ function getLoginField(perfil, body) {
   return { value: null, fieldName: 'Identificador' };
 }
 
+// Traduz o status numérico do banco para texto legível na API.
 function statusToText(status) {
   if (status === STATUS.PENDENTE) return 'pendente';
   if (status === STATUS.APROVADO) return 'aprovado';
@@ -85,6 +100,7 @@ function statusToText(status) {
   return 'desconhecido';
 }
 
+// Retorna a mensagem de bloqueio adequada para status não autorizados.
 function getBlockedStatusMessage(status) {
   if (status === STATUS.PENDENTE) {
     return 'Sua solicitacao ainda esta pendente de aprovacao.';
@@ -101,6 +117,7 @@ function getBlockedStatusMessage(status) {
   return null;
 }
 
+// Gera a mensagem correta quando um cadastro duplicado já existe.
 function getExistingRegisterMessage(fieldLabel, status) {
   if (status === STATUS.PENDENTE) {
     return `Ja existe uma solicitacao pendente para este ${fieldLabel}.`;
@@ -117,6 +134,7 @@ function getExistingRegisterMessage(fieldLabel, status) {
   return null;
 }
 
+// Converte a linha do banco no formato esperado pelo frontend.
 function mapUserRow(row) {
   return {
     id: row.id,
@@ -126,16 +144,53 @@ function mapUserRow(row) {
     cpf: row.cpf,
     email: row.email,
     usuario: row.usuario,
+    adm: Boolean(row.adm),
     status: statusToText(row.ativo),
     criadoEm: row.criado_em,
     atualizadoEm: row.atualizado_em,
   };
 }
 
+// Identifica se o cadastro pertence a um colaborador.
 function isCollaboratorRow(row) {
   return !row.oab;
 }
 
+// Lê o identificador do administrador enviado nas chamadas protegidas.
+function getAdminUserId(req) {
+  const headerValue = req.headers['x-admin-user-id'];
+  const adminUserId = Number.parseInt(Array.isArray(headerValue) ? headerValue[0] : headerValue, 10);
+  return Number.isInteger(adminUserId) && adminUserId > 0 ? adminUserId : null;
+}
+
+// Confirma no banco se o usuário autenticado possui permissão administrativa.
+async function ensureAdmin(req, res) {
+  const adminUserId = getAdminUserId(req);
+
+  if (!adminUserId) {
+    json(res, 401, { error: 'Sessao administrativa nao identificada.' });
+    return null;
+  }
+
+  const [rows] = await db.execute(
+    `SELECT id
+       FROM users
+      WHERE id = ?
+        AND adm = 1
+        AND ativo = ?
+      LIMIT 1`,
+    [adminUserId, STATUS.APROVADO]
+  );
+
+  if (rows.length === 0) {
+    json(res, 403, { error: 'Acesso permitido apenas para administradores.' });
+    return null;
+  }
+
+  return adminUserId;
+}
+
+// Busca um usuário pelo identificador de login e opcionalmente valida a senha.
 async function findUserByLogin(perfil, loginValue, includePassword, senha) {
   const profileWhere = buildProfileWhere(perfil);
 
@@ -150,10 +205,11 @@ async function findUserByLogin(perfil, loginValue, includePassword, senha) {
             cpf,
             email,
             nome_usuario AS usuario,
+            adm,
             ativo,
             criado_em,
             atualizado_em
-       FROM usuarios
+       FROM users
       WHERE (numero_oab = ? OR nome_usuario = ? OR email = ?)
         AND ${profileWhere}
         ${passwordFilter}
@@ -167,6 +223,7 @@ async function findUserByLogin(perfil, loginValue, includePassword, senha) {
   return rows[0] || null;
 }
 
+// Busca um usuário pelo identificador interno.
 async function findUserById(userId) {
   const [rows] = await db.execute(
     `SELECT id,
@@ -176,10 +233,11 @@ async function findUserById(userId) {
             email,
             nome_usuario AS usuario,
             senha_hash,
+            adm,
             ativo,
             criado_em,
             atualizado_em
-       FROM usuarios
+       FROM users
       WHERE id = ?
       LIMIT 1`,
     [userId]
@@ -188,10 +246,11 @@ async function findUserById(userId) {
   return rows[0] || null;
 }
 
+// Verifica se já existe outro usuário com o mesmo nome de usuário.
 async function findUserByUsername(usuario, excludeUserId) {
   const [rows] = await db.execute(
     `SELECT id
-       FROM usuarios
+       FROM users
       WHERE nome_usuario = ?
         AND id <> ?
       LIMIT 1`,
@@ -201,6 +260,7 @@ async function findUserByUsername(usuario, excludeUserId) {
   return rows[0] || null;
 }
 
+// Consulta uma solicitação pelo trio perfil, e-mail e CPF.
 async function findUserByStatusLookup(perfil, email, cpf) {
   const profileWhere = buildProfileWhere(perfil);
 
@@ -213,10 +273,11 @@ async function findUserByStatusLookup(perfil, email, cpf) {
             cpf,
             email,
             nome_usuario AS usuario,
+            adm,
             ativo,
             criado_em,
             atualizado_em
-       FROM usuarios
+       FROM users
       WHERE email = ?
         AND cpf = ?
         AND ${profileWhere}
@@ -227,12 +288,13 @@ async function findUserByStatusLookup(perfil, email, cpf) {
   return rows[0] || null;
 }
 
+// Impede duplicidade de campos sensíveis durante o cadastro.
 async function ensureUnique(field, value, label, res) {
   if (!value) return true;
 
   const [rows] = await db.execute(
     `SELECT id, ativo
-       FROM usuarios
+       FROM users
       WHERE ${field} = ?
       LIMIT 1`,
     [value]
@@ -251,6 +313,7 @@ async function ensureUnique(field, value, label, res) {
   return false;
 }
 
+// Processa o login respeitando perfil, senha e bloqueios por status.
 async function login(req, res) {
   try {
     const body = await readBody(req);
@@ -291,6 +354,7 @@ async function login(req, res) {
   }
 }
 
+// Recebe uma solicitação de acesso e grava o cadastro como pendente.
 async function register(req, res) {
   try {
     const body = await readBody(req);
@@ -298,8 +362,8 @@ async function register(req, res) {
     const nome = cleanValue(body.nome);
     const email = cleanValue(body.email);
     const senha = cleanValue(body.senha);
-    const oab = cleanValue(body.oab);
-    const cpf = cleanValue(body.cpf);
+    const oab = digitsOnly(body.oab, 5);
+    const cpf = digitsOnly(body.cpf, 11);
     const usuario = cleanValue(body.usuario);
 
     if (!perfil || !nome || !email || !senha) {
@@ -310,8 +374,16 @@ async function register(req, res) {
       return json(res, 400, { error: 'Numero OAB obrigatorio para advogados.' });
     }
 
+    if (perfil === 'advogado' && oab.length !== 5) {
+      return json(res, 400, { error: 'Numero OAB deve conter exatamente 5 numeros.' });
+    }
+
     if (perfil === 'colaborador' && !usuario) {
       return json(res, 400, { error: 'Usuario obrigatorio para colaboradores.' });
+    }
+
+    if (!cpf || cpf.length !== 11) {
+      return json(res, 400, { error: 'CPF deve conter exatamente 11 numeros.' });
     }
 
     if (!(await ensureUnique('email', email, 'e-mail', res))) return;
@@ -319,7 +391,7 @@ async function register(req, res) {
     if (!(await ensureUnique('nome_usuario', usuario, 'usuario', res))) return;
 
     await db.execute(
-      `INSERT INTO usuarios (
+      `INSERT INTO users (
          nome_completo,
          numero_oab,
          cpf,
@@ -350,6 +422,7 @@ async function register(req, res) {
   }
 }
 
+// Trata pedidos de recuperação e bloqueia contas não elegíveis.
 async function forgotPassword(req, res) {
   try {
     const body = await readBody(req);
@@ -368,7 +441,7 @@ async function forgotPassword(req, res) {
 
     const [rows] = await db.execute(
       `SELECT id, ativo
-         FROM usuarios
+         FROM users
         WHERE email = ?
           AND ${profileWhere}
         LIMIT 1`,
@@ -393,15 +466,20 @@ async function forgotPassword(req, res) {
   }
 }
 
+// Permite ao solicitante consultar o andamento do cadastro.
 async function getAccessRequestStatus(req, res) {
   try {
     const body = await readBody(req);
     const perfil = cleanValue(body.perfil);
     const email = cleanValue(body.email);
-    const cpf = cleanValue(body.cpf);
+    const cpf = digitsOnly(body.cpf, 11);
 
     if (!perfil || !email || !cpf) {
       return json(res, 400, { error: 'Perfil, e-mail e CPF sao obrigatorios.' });
+    }
+
+    if (cpf.length !== 11) {
+      return json(res, 400, { error: 'CPF deve conter exatamente 11 numeros.' });
     }
 
     const user = await findUserByStatusLookup(perfil, email, cpf);
@@ -432,8 +510,12 @@ async function getAccessRequestStatus(req, res) {
   }
 }
 
+// Carrega o dashboard administrativo com pendências, ativos e resumo.
 async function listAccessRequests(req, res) {
   try {
+    const adminUserId = await ensureAdmin(req, res);
+    if (!adminUserId) return;
+
     const [pendingRows] = await db.execute(
       `SELECT id,
               nome_completo AS nome,
@@ -441,10 +523,11 @@ async function listAccessRequests(req, res) {
               cpf,
               email,
               nome_usuario AS usuario,
+              adm,
               ativo,
               criado_em,
               atualizado_em
-         FROM usuarios
+         FROM users
         WHERE ativo = ?
         ORDER BY criado_em ASC`,
       [STATUS.PENDENTE]
@@ -457,10 +540,11 @@ async function listAccessRequests(req, res) {
               cpf,
               email,
               nome_usuario AS usuario,
+              adm,
               ativo,
               criado_em,
               atualizado_em
-         FROM usuarios
+         FROM users
         WHERE ativo = ?
         ORDER BY atualizado_em DESC, nome_completo ASC`,
       [STATUS.APROVADO]
@@ -468,7 +552,7 @@ async function listAccessRequests(req, res) {
 
     const [summaryRows] = await db.execute(
       `SELECT ativo, COUNT(*) AS total
-         FROM usuarios
+         FROM users
         GROUP BY ativo`
     );
 
@@ -496,6 +580,7 @@ async function listAccessRequests(req, res) {
   }
 }
 
+// Atualiza o status de uma solicitação pendente e dispara e-mail ao aprovar.
 async function updatePendingRequestStatus(res, userId, nextStatus) {
   if (!Number.isInteger(userId) || userId <= 0) {
     return json(res, 400, { error: 'Identificador da solicitacao invalido.' });
@@ -520,7 +605,7 @@ async function updatePendingRequestStatus(res, userId, nextStatus) {
   }
 
   await db.execute(
-    `UPDATE usuarios
+    `UPDATE users
         SET ativo = ?,
             atualizado_em = NOW()
       WHERE id = ?`,
@@ -550,24 +635,36 @@ async function updatePendingRequestStatus(res, userId, nextStatus) {
   });
 }
 
+// Aprova uma solicitação pendente.
 async function approveAccessRequest(req, res, userId) {
   try {
+    const adminUserId = await ensureAdmin(req, res);
+    if (!adminUserId) return;
+
     return await updatePendingRequestStatus(res, userId, STATUS.APROVADO);
   } catch (err) {
     handleServerError(res, 'admin/access-requests/approve', err);
   }
 }
 
+// Recusa uma solicitação pendente.
 async function rejectAccessRequest(req, res, userId) {
   try {
+    const adminUserId = await ensureAdmin(req, res);
+    if (!adminUserId) return;
+
     return await updatePendingRequestStatus(res, userId, STATUS.RECUSADO);
   } catch (err) {
     handleServerError(res, 'admin/access-requests/reject', err);
   }
 }
 
+// Desativa um cadastro já aprovado.
 async function deactivateUserAccount(req, res, userId) {
   try {
+    const adminUserId = await ensureAdmin(req, res);
+    if (!adminUserId) return;
+
     if (!Number.isInteger(userId) || userId <= 0) {
       return json(res, 400, { error: 'Identificador do usuario invalido.' });
     }
@@ -591,7 +688,7 @@ async function deactivateUserAccount(req, res, userId) {
     }
 
     await db.execute(
-      `UPDATE usuarios
+      `UPDATE users
           SET ativo = ?,
               atualizado_em = NOW()
         WHERE id = ?`,
@@ -610,8 +707,12 @@ async function deactivateUserAccount(req, res, userId) {
   }
 }
 
+// Define ou atualiza as credenciais de acesso de um colaborador.
 async function setCollaboratorCredentials(req, res, userId) {
   try {
+    const adminUserId = await ensureAdmin(req, res);
+    if (!adminUserId) return;
+
     if (!Number.isInteger(userId) || userId <= 0) {
       return json(res, 400, { error: 'Identificador do usuario invalido.' });
     }
@@ -641,7 +742,7 @@ async function setCollaboratorCredentials(req, res, userId) {
     }
 
     await db.execute(
-      `UPDATE usuarios
+      `UPDATE users
           SET nome_usuario = ?,
               senha_hash = SHA2(?, 256),
               atualizado_em = NOW()

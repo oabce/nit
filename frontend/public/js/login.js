@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnShowLoginFromStatus = document.getElementById('btn-show-login-from-status');
   const linkEsqueci = document.getElementById('link-esqueci');
   const regOab = document.getElementById('reg-oab');
+  const regCpf = document.getElementById('reg-cpf');
   const regUsuario = document.getElementById('reg-usuario');
   const loginIdentifier = document.getElementById('login-identifier');
   const recoverEmail = document.getElementById('recover-email');
@@ -290,6 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.querySelector('.btn-spinner').classList.toggle('hidden', !loading);
   }
 
+  function keepOnlyDigits(value, maxLength = 11) {
+    return value.replace(/\D/g, '').slice(0, maxLength);
+  }
+
   async function postJSON(url, data) {
     const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
@@ -326,6 +331,18 @@ document.addEventListener('DOMContentLoaded', () => {
     recoverEmail.value = '';
     clearMsgs();
     showView('recover');
+  });
+
+  regOab.setAttribute('inputmode', 'numeric');
+
+  regOab.addEventListener('input', () => {
+    regOab.value = keepOnlyDigits(regOab.value, 5);
+  });
+
+  [regCpf, statusCpf].forEach((field) => {
+    field.addEventListener('input', () => {
+      field.value = keepOnlyDigits(field.value);
+    });
   });
 
   if (mobileQuery.addEventListener) mobileQuery.addEventListener('change', syncLayoutState);
@@ -374,12 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = {
         perfil: activeProfile,
         nome: form.nome.value,
-        cpf: form.cpf.value,
+        cpf: keepOnlyDigits(form.cpf.value),
         email: form.email.value,
         senha: form.senha.value,
       };
 
-      if (activeProfile === 'advogado') payload.oab = form.oab.value;
+      if (activeProfile === 'advogado') payload.oab = keepOnlyDigits(form.oab.value, 5);
       if (activeProfile === 'colaborador') payload.usuario = form.usuario.value;
 
       const result = await postJSON('/api/auth/register', payload);
@@ -422,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await postJSON('/api/auth/request-status', {
         perfil: activeProfile,
         email: statusEmail.value,
-        cpf: statusCpf.value,
+        cpf: keepOnlyDigits(statusCpf.value),
       });
 
       if (result.error) {

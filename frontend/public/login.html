@@ -279,8 +279,8 @@
         <form id="form-register" class="space-y-2.5 hidden" novalidate>
           <div class="msg" id="msg-register"></div>
           <input class="field" id="reg-nome" type="text" name="nome" placeholder="Nome completo" required />
-          <input class="field" id="reg-oab" type="text" name="oab" placeholder="Número OAB" />
-          <input class="field" id="reg-cpf" type="text" name="cpf" placeholder="CPF" required />
+          <input class="field" id="reg-oab" type="text" name="oab" placeholder="Número OAB" maxlength="5" />
+          <input class="field" id="reg-cpf" type="text" name="cpf" placeholder="CPF" inputmode="numeric" maxlength="11" required />
           <input class="field" id="reg-email" type="email" name="email" placeholder="E-mail" required />
           <input class="field" id="reg-usuario" type="text" name="usuario" placeholder="Usuário" />
           <div class="flex flex-col sm:flex-row gap-2">
@@ -321,7 +321,7 @@
             Consulte o andamento da sua solicitacao usando o e-mail e o CPF informados no cadastro.
           </p>
           <input class="field" id="status-email" type="email" name="email" placeholder="E-mail" required />
-          <input class="field" id="status-cpf" type="text" name="cpf" placeholder="CPF" required />
+          <input class="field" id="status-cpf" type="text" name="cpf" placeholder="CPF" inputmode="numeric" maxlength="11" required />
           <div id="status-result" class="hidden rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
             <p class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Andamento</p>
             <p id="status-badge" class="mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"></p>
