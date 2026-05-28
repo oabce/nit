@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ? `${window.location.protocol}//${window.location.hostname}:3000`
     : '';
   const currentUser = JSON.parse(localStorage.getItem('nit_user') || 'null');
+  const adminSessionName = document.getElementById('admin-session-name');
+  const adminSessionRole = document.getElementById('admin-session-role');
 
   const summaryPending = document.getElementById('summary-pending');
   const summaryApproved = document.getElementById('summary-approved');
@@ -56,6 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return true;
+  }
+
+  function hydrateAdminSession() {
+    adminSessionName.textContent = currentUser?.nome || 'Administrador';
+    adminSessionRole.textContent = currentUser?.oab ? 'Administrador advogado' : 'Administrador';
   }
 
   function getAdminHeaders(extraHeaders = {}) {
@@ -494,5 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!ensureAdminSession()) return;
 
+  hydrateAdminSession();
   fetchDashboard();
 });

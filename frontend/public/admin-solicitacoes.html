@@ -62,7 +62,7 @@
 </head>
 <body class="min-h-screen text-slate-800 font-sans">
   <div class="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-    <header class="mb-6 flex flex-col gap-5 rounded-[2rem] border border-white/60 bg-[#f5f5f5] px-6 py-6 text-white shadow-card lg:flex-row lg:items-center">
+    <header class="mb-6 flex flex-col gap-5 rounded-[2rem] border border-white/60 bg-[#f5f5f5] px-6 py-6 text-white shadow-card lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-center gap-5">
         <img
           src="assets/imgs/Logo1.1.png"
@@ -74,6 +74,16 @@
           <p class="mt-2 max-w-2xl text-sm leading-relaxed text-black/75">
             Revise pedidos pendentes, acompanhe usuarios ativos e desative cadastros quando necessario.
           </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 self-start rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm">
+        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#12304d] via-[#214f7d] to-[#b51f2e] text-white shadow-md">
+          <i class="fa-solid fa-user-shield text-xl"></i>
+        </div>
+        <div class="min-w-0">
+          <p id="admin-session-name" class="truncate text-sm font-extrabold text-nit-ink">Administrador</p>
+          <p id="admin-session-role" class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Painel administrativo</p>
         </div>
       </div>
     </header>
