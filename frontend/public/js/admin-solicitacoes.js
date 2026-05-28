@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const API_BASE = ['127.0.0.1', 'localhost'].includes(window.location.hostname) && window.location.port !== '3000'
     ? `${window.location.protocol}//${window.location.hostname}:3000`
     : '';
+  const currentUser = JSON.parse(localStorage.getItem('nit_user') || 'null');
 
   const summaryPending = document.getElementById('summary-pending');
   const summaryApproved = document.getElementById('summary-approved');
@@ -38,6 +39,31 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeUsers = [];
   let filterTerm = '';
   let selectedRecord = null;
+
+  function redirectToLogin() {
+    window.location.replace('/login.html');
+  }
+
+  function ensureAdminSession() {
+    if (!currentUser) {
+      redirectToLogin();
+      return false;
+    }
+
+    if (!currentUser.adm) {
+      window.location.replace('/bem-vindo.html');
+      return false;
+    }
+
+    return true;
+  }
+
+  function getAdminHeaders(extraHeaders = {}) {
+    return {
+      'X-Admin-User-Id': String(currentUser.id),
+      ...extraHeaders,
+    };
+  }
 
   function formatDate(value) {
     if (!value) return '-';
@@ -294,7 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
     hideFeedback();
 
     try {
-      const response = await fetch(`${API_BASE}/api/admin/access-requests`);
+      const response = await fetch(`${API_BASE}/api/admin/access-requests`, {
+        headers: getAdminHeaders(),
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -324,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const response = await fetch(`${API_BASE}/api/admin/access-requests/${id}/${action}`, {
         method: 'POST',
+        headers: getAdminHeaders(),
       });
       const data = await response.json();
 
@@ -356,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const response = await fetch(`${API_BASE}/api/admin/access-requests/${id}/deactivate`, {
         method: 'POST',
+        headers: getAdminHeaders(),
       });
       const data = await response.json();
 
@@ -383,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = Number.parseInt(credentialsUserId.value, 10);
       const response = await fetch(`${API_BASE}/api/admin/access-requests/${id}/credentials`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           usuario: credentialsUsername.value,
           senha: credentialsPassword.value,
@@ -461,6 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
       closeCredentialsModal();
     }
   });
+
+  if (!ensureAdminSession()) return;
 
   fetchDashboard();
 });
