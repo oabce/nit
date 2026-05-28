@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function hydrateAdminSession() {
-    adminSessionName.textContent = currentUser?.nome || 'Administrador';
-    adminSessionRole.textContent = currentUser?.oab ? 'Administrador advogado' : 'Administrador';
+    adminSessionName.textContent = currentUser?.nome || 'Usuario';
+    adminSessionRole.textContent = currentUser?.oab ? 'Advogado(a)' : 'Colaborador(a)';
   }
 
   function getAdminHeaders(extraHeaders = {}) {
