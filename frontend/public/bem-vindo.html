@@ -31,7 +31,6 @@
 </head>
 <body class="min-h-screen bg-gray-50 flex flex-col font-sans">
 
-  <!-- Header -->
   <header class="bg-nit-blue text-white px-6 py-3 flex items-center justify-between shadow-md">
     <img src="/assets/imgs/Logo3.1.png" alt="NIT OAB/CE" class="h-10 object-contain" />
     <div class="flex items-center gap-4">
@@ -50,7 +49,6 @@
     </div>
   </header>
 
-  <!-- Main -->
   <main class="flex-1 flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 max-w-md w-full text-center">
       <div class="w-20 h-20 bg-nit-blue/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -59,14 +57,21 @@
       <h1 class="text-2xl font-semibold text-gray-800 mb-1">Bem-vindo(a),</h1>
       <p id="welcome-name" class="text-2xl font-semibold text-nit-blue mb-4"></p>
       <p class="text-sm text-gray-500 leading-relaxed">
-        Você está acessando o <strong class="text-gray-700">NIT</strong> —
+        Você está acessando o <strong class="text-gray-700">NIT</strong> -
         Núcleo de Inovação Tecnológica da OAB/CE.<br /><br />
         As funcionalidades do sistema estarão disponíveis em breve.
       </p>
+      <a
+        id="btn-admin-panel"
+        href="/admin-solicitacoes.html"
+        class="mt-6 hidden w-full items-center justify-center gap-2 rounded-xl bg-nit-blue px-4 py-3 text-sm font-semibold text-white transition hover:bg-nit-blue-dark"
+      >
+        <i class="fas fa-user-shield"></i>
+        <span>Acessar painel administrativo</span>
+      </a>
     </div>
   </main>
 
-  <!-- Footer gradient bar -->
   <div class="h-1.5 bg-footer-gradient"></div>
 
   <script>
@@ -75,12 +80,17 @@
       if (!raw) { window.location.href = '/login.html'; return; }
 
       const user = JSON.parse(raw);
-      if (user.adm) { window.location.href = '/admin-solicitacoes.html'; return; }
+      const adminButton = document.getElementById('btn-admin-panel');
 
       const nome = user.nome || 'Usuário';
       document.getElementById('welcome-name').textContent = nome;
       document.getElementById('header-name').textContent = nome;
       document.getElementById('header-profile').textContent = user.oab ? 'Advogado(a)' : 'Colaborador(a)';
+
+      if (user.adm && adminButton) {
+        adminButton.classList.remove('hidden');
+        adminButton.classList.add('inline-flex');
+      }
 
       document.getElementById('btn-logout').addEventListener('click', () => {
         localStorage.removeItem('nit_user');
