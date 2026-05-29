@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const credentialsModalSubtitle = document.getElementById('credentials-modal-subtitle');
   const credentialsForm = document.getElementById('credentials-form');
   const credentialsUserId = document.getElementById('credentials-user-id');
+  const credentialsName = document.getElementById('credentials-name');
+  const credentialsCpf = document.getElementById('credentials-cpf');
+  const credentialsEmail = document.getElementById('credentials-email');
   const credentialsUsername = document.getElementById('credentials-username');
   const credentialsPassword = document.getElementById('credentials-password');
   const credentialsFields = document.getElementById('credentials-fields');
@@ -150,13 +153,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return record.oab ? `OAB ${record.oab}` : record.cpf || '-';
   }
 
-  function updateRecordCredentials(list, updatedRecord) {
-    return list.map((record) => (record.id === updatedRecord.id ? { ...record, usuario: updatedRecord.usuario } : record));
+  function keepOnlyDigits(value, maxLength) {
+    return String(value || '').replace(/\D/g, '').slice(0, maxLength);
+  }
+
+  function updateRecord(list, updatedRecord) {
+    return list.map((record) => (record.id === updatedRecord.id ? { ...record, ...updatedRecord } : record));
   }
 
   function openCredentialsModal(record) {
     selectedRecord = record;
     credentialsUserId.value = record.id;
+    credentialsName.value = record.nome || '';
+    credentialsCpf.value = record.cpf || '';
+    credentialsEmail.value = record.email || '';
     credentialsUsername.value = record.usuario || '';
     credentialsPassword.value = '';
     credentialsModalEyebrow.textContent = record.perfil === 'colaborador' ? 'Colaborador' : 'Advogado';
@@ -171,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     credentialsModal.classList.add('flex');
 
     if (record.perfil === 'colaborador') {
-      credentialsUsername.focus();
+      credentialsName.focus();
     } else if (record.status === 'pendente') {
       btnModalApprove.focus();
     } else if (record.status === 'aprovado') {
@@ -422,6 +432,9 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
+          nome: credentialsName.value,
+          cpf: keepOnlyDigits(credentialsCpf.value, 11),
+          email: credentialsEmail.value,
           usuario: credentialsUsername.value,
           senha: credentialsPassword.value,
         }),
@@ -432,10 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(data.error || 'Nao foi possivel salvar as credenciais.');
       }
 
-      pendingRequests = updateRecordCredentials(pendingRequests, data.solicitacao);
-      activeUsers = updateRecordCredentials(activeUsers, data.solicitacao);
+      pendingRequests = updateRecord(pendingRequests, data.solicitacao);
+      activeUsers = updateRecord(activeUsers, data.solicitacao);
       renderAll();
-      showFeedback(data.message || 'Credenciais definidas com sucesso.', 'success');
+      showFeedback(data.message || 'Cadastro atualizado com sucesso.', 'success');
       closeCredentialsModal();
     } catch (error) {
       showCredentialsFeedback(error.message || 'Erro ao salvar credenciais.', 'error');
@@ -497,6 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target.classList.contains('modal-backdrop')) {
       closeCredentialsModal();
     }
+  });
+
+  credentialsCpf?.addEventListener('input', () => {
+    credentialsCpf.value = keepOnlyDigits(credentialsCpf.value, 11);
   });
 
   if (!ensureAdminSession()) return;
