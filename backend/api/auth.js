@@ -717,11 +717,18 @@ async function setCollaboratorCredentials(req, res, userId) {
     }
 
     const body = await readBody(req);
+    const nome = cleanValue(body.nome);
+    const cpf = digitsOnly(body.cpf, 11);
+    const email = cleanValue(body.email);
     const usuario = cleanValue(body.usuario);
     const senha = cleanValue(body.senha);
 
-    if (!usuario || !senha) {
-      return json(res, 400, { error: 'Usuario e senha sao obrigatorios.' });
+    if (!nome || !cpf || !email || !usuario) {
+      return json(res, 400, { error: 'Nome, CPF, e-mail e usuario sao obrigatorios.' });
+    }
+
+    if (cpf.length !== 11) {
+      return json(res, 400, { error: 'CPF deve conter exatamente 11 numeros.' });
     }
 
     const user = await findUserById(userId);
@@ -740,20 +747,38 @@ async function setCollaboratorCredentials(req, res, userId) {
       return json(res, 409, { error: 'Este nome de usuario ja esta em uso.' });
     }
 
-    await db.execute(
-      `UPDATE users
-          SET nome_usuario = ?,
-              senha_hash = SHA2(?, 256),
-              atualizado_em = NOW()
-        WHERE id = ?`,
-      [usuario, senha, userId]
-    );
+    if (senha) {
+      await db.execute(
+        `UPDATE users
+            SET nome_completo = ?,
+                cpf = ?,
+                email = ?,
+                nome_usuario = ?,
+                senha_hash = SHA2(?, 256),
+                atualizado_em = NOW()
+          WHERE id = ?`,
+        [nome, cpf, email, usuario, senha, userId]
+      );
+    } else {
+      await db.execute(
+        `UPDATE users
+            SET nome_completo = ?,
+                cpf = ?,
+                email = ?,
+                nome_usuario = ?,
+                atualizado_em = NOW()
+          WHERE id = ?`,
+        [nome, cpf, email, usuario, userId]
+      );
+    }
 
     const updatedUser = await findUserById(userId);
 
     return json(res, 200, {
       success: true,
-      message: 'Usuario e senha do colaborador definidos com sucesso.',
+      message: senha
+        ? 'Dados e credenciais do colaborador atualizados com sucesso.'
+        : 'Dados do colaborador atualizados com sucesso.',
       solicitacao: mapUserRow(updatedUser),
     });
   } catch (err) {
