@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showMsg('msg-login', result.error, 'error');
       } else {
         localStorage.setItem('nit_user', JSON.stringify(result.usuario));
-        window.location.href = result.usuario.adm ? '/admin-solicitacoes.html' : '/bem-vindo.html';
+        window.location.href = '/bem-vindo.html';
       }
     } catch {
       showMsg('msg-login', 'Erro de conex\u00E3o. Tente novamente.', 'error');
