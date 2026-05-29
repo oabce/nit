@@ -386,7 +386,6 @@ async function register(req, res) {
       return json(res, 400, { error: 'CPF deve conter exatamente 11 numeros.' });
     }
 
-    if (!(await ensureUnique('email', email, 'e-mail', res))) return;
     if (!(await ensureUnique('numero_oab', oab, 'numero OAB', res))) return;
     if (!(await ensureUnique('nome_usuario', usuario, 'usuario', res))) return;
 
