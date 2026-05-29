@@ -31,6 +31,7 @@
 </head>
 <body class="min-h-screen bg-gray-50 flex flex-col font-sans">
 
+  <!-- Header -->
   <header class="bg-nit-blue text-white px-6 py-3 flex items-center justify-between shadow-md">
     <img src="/assets/imgs/Logo3.1.png" alt="NIT OAB/CE" class="h-10 object-contain" />
     <div class="flex items-center gap-4">
@@ -41,16 +42,15 @@
         <p id="header-name" class="text-sm font-medium leading-tight"></p>
         <p id="header-profile" class="text-xs text-white/50 leading-tight"></p>
       </div>
-      <button
-        id="btn-logout"
-        class="flex items-center gap-2 text-sm bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition"
-      >
+      <button id="btn-logout"
+        class="flex items-center gap-2 text-sm bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition">
         <i class="fas fa-sign-out-alt"></i>
         <span class="hidden sm:inline">Sair</span>
       </button>
     </div>
   </header>
 
+  <!-- Main -->
   <main class="flex-1 flex items-center justify-center p-6">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 max-w-md w-full text-center">
       <div class="w-20 h-20 bg-nit-blue/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -59,43 +59,28 @@
       <h1 class="text-2xl font-semibold text-gray-800 mb-1">Bem-vindo(a),</h1>
       <p id="welcome-name" class="text-2xl font-semibold text-nit-blue mb-4"></p>
       <p class="text-sm text-gray-500 leading-relaxed">
-        Voce esta acessando o <strong class="text-gray-700">NIT</strong> -
-        Nucleo de Inovacao Tecnologica da OAB/CE.<br /><br />
-        As funcionalidades do sistema estarao disponiveis em breve.
+        Você está acessando o <strong class="text-gray-700">NIT</strong> —
+        Núcleo de Inovação Tecnológica da OAB/CE.<br /><br />
+        As funcionalidades do sistema estarão disponíveis em breve.
       </p>
-      <div id="admin-entry" class="hidden mt-6">
-        <a
-          href="/admin-solicitacoes.html"
-          class="inline-flex items-center gap-2 rounded-xl bg-nit-blue px-5 py-3 text-sm font-semibold text-white transition hover:bg-nit-blue-dark"
-        >
-          <i class="fas fa-shield-halved"></i>
-          <span>Acessar painel administrativo</span>
-        </a>
-      </div>
     </div>
   </main>
 
+  <!-- Footer gradient bar -->
   <div class="h-1.5 bg-footer-gradient"></div>
 
   <script>
     (function () {
       const raw = localStorage.getItem('nit_user');
-      if (!raw) {
-        window.location.href = '/login.html';
-        return;
-      }
+      if (!raw) { window.location.href = '/login.html'; return; }
 
       const user = JSON.parse(raw);
-      const nome = user.nome || 'Usuario';
-      const perfilBase = user.oab ? 'Advogado(a)' : 'Colaborador(a)';
+      if (user.adm) { window.location.href = '/admin-solicitacoes.html'; return; }
 
+      const nome = user.nome || 'Usuário';
       document.getElementById('welcome-name').textContent = nome;
       document.getElementById('header-name').textContent = nome;
-      document.getElementById('header-profile').textContent = user.adm ? `${perfilBase} • Admin` : perfilBase;
-
-      if (user.adm) {
-        document.getElementById('admin-entry').classList.remove('hidden');
-      }
+      document.getElementById('header-profile').textContent = user.oab ? 'Advogado(a)' : 'Colaborador(a)';
 
       document.getElementById('btn-logout').addEventListener('click', () => {
         localStorage.removeItem('nit_user');
